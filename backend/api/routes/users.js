@@ -16,6 +16,7 @@ router.post("/signup", async (req, res) => {
     const { username, email, password} = user;
 
     if (!email || !password || !username) {
+      console.log("Missing fields in signup:", { email, password, username });
       return res.status(400).json(response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
         message: "Missing fields",
         description: "Email, password and username are required"
@@ -24,6 +25,7 @@ router.post("/signup", async (req, res) => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.log("Invalid email format:", email);
         return res.status(400).json(response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
             message: "Invalid email format",
             description: "Please enter a valid email address"
@@ -31,6 +33,7 @@ router.post("/signup", async (req, res) => {
     }
 
     if (password.length < 6) {
+      console.log("Password too short:", password);
         return res.status(400).json(response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
             message: "Password too short",
             description: "Password must be at least 6 characters long"
@@ -40,6 +43,7 @@ router.post("/signup", async (req, res) => {
     const existUser = await User.findOne({ email: user.email });
 
     if (existUser) {
+      console.log("User already exists with email:", user.email); 
       const errorResponse = response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
         message: "Error adding user",
         description: "User already exists"
@@ -112,7 +116,7 @@ router.post("/login", async (req, res) => {
         userName: check.userName,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "12h" }
     );
 
     // GÜNCELLEME: Login olduğunda kullanıcının tercihlerini de response'a ekledim.

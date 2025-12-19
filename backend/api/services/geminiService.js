@@ -4,7 +4,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const ClothingItem = require('../db/models/ClothingItems'); 
 const Outfit = require('../db/models/Outfits');
 const OutfitItem = require('../db/models/OutfitItems');
-const { CustomError } = require('../lib/CustomError');
+const CustomError  = require('../lib/CustomError');
 
 // ÖNEMLİ: @google/generative-ai paketini backend/api dizininde kurmanız gerekir:
 // npm install @google/generative-ai
@@ -67,7 +67,7 @@ async function generateOutfitWithGemini(clothingItems, excludedOutfits = []) {
 
   try {
     console.log("Gemini API çağrılıyor..."); // Durum: API çağrısı
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const rawResponse = response.text();
@@ -83,12 +83,12 @@ async function generateOutfitWithGemini(clothingItems, excludedOutfits = []) {
     } catch (parseError) {
         console.error('Gemini yanıtından JSON ayrıştırılırken hata oluştu:', parseError);
         console.error('Ham Gemini yanıtı:', rawResponse);
-        throw new CustomError("Gemini'den kombin verileri ayrıştırılamadı. Yanıt formatı geçersiz.", 500);
+        throw new CustomError( 500 , "Gemini'den kombin verileri ayrıştırılamadı. Yanıt formatı geçersiz.");
     }
 
     if (!parsedJson.outfit_ids || !Array.isArray(parsedJson.outfit_ids)) {
       console.error('Gemini yanıtında geçersiz JSON yapısı:', parsedJson);
-      throw new CustomError('Gemini yanıtında geçersiz veri yapısı. "outfit_ids" dizisi eksik veya bir dizi değil.', 500);
+      throw new CustomError( 500 ,'Gemini yanıtında geçersiz veri yapısı. "outfit_ids" dizisi eksik veya bir dizi değil.');
     }
 
     console.log("Gemini ile kombin oluşturma başarıyla tamamlandı."); // Durum: Bitiş
@@ -100,7 +100,7 @@ async function generateOutfitWithGemini(clothingItems, excludedOutfits = []) {
         throw error;
     }
     console.error('Gemini API çağrılırken beklenmedik bir hata oluştu:', error);
-    throw new CustomError("Beklenmedik bir API hatası nedeniyle Gemini'den kombin oluşturulamadı.", 500);
+    throw new CustomError( 500 , "Beklenmedik bir API hatası nedeniyle Gemini'den kombin oluşturulamadı.");
   }
 }
 

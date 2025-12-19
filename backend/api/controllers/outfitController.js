@@ -32,9 +32,7 @@ const generateAndSaveOutfit = async (req, res, next) => {
 
 
     if (!userClothingItems || userClothingItems.length < 3) {
-      throw new CustomError(400, 
-         "Not enough clothing items to generate an outfit. Please add more items to your wardrobe.",
-       "hjg"
+      throw new CustomError(400, "Not enough clothing items to generate an outfit. Please add more items to your wardrobe.","hjg"
       );
     }
 
@@ -44,9 +42,7 @@ const generateAndSaveOutfit = async (req, res, next) => {
 
 
     if (!outfitItemIds || outfitItemIds.length === 0) {
-      throw new CustomError(500,
-        "Could not generate a new unique outfit with the available items.",
-        "hehe"
+      throw new CustomError(500,"Could not generate a new unique outfit with the available items.","hehe"
       );
     }
     
@@ -67,7 +63,7 @@ const generateAndSaveOutfit = async (req, res, next) => {
     console.log("finalOutfit after saving and populating:", finalOutfit);
 
 
-    res.status(201).json(Response.success(201, {
+    res.status(201).json(Response.successResponse(201, {
       message: "Outfit generated successfully.",
       description: finalOutfit
     }));
@@ -79,7 +75,7 @@ const generateAndSaveOutfit = async (req, res, next) => {
     
     // CustomError'ı istemciye daha anlaşılır bir şekilde gönder
     if (error instanceof CustomError) {
-      return res.status(error.statusCode).json(Response.errorResponse(404,{
+      return res.status(error.code).json(Response.errorResponse(404,{
         message: error.message,
       }));
     }
@@ -104,8 +100,7 @@ const updateOutfitStatus = async (req, res, next) => {
     const outfit = await Outfit.findOne({ _id: outfitId, userId: userId });
 
     if (!outfit) {
-      throw new CustomError(404,"Outfit not found or you don't have permission to change it.","dd"
-      );
+      throw new CustomError(404,"Outfit not found or you don't have permission to change it.","dd");
     }
 
     outfit.status = status;
