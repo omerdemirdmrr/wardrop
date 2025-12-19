@@ -25,7 +25,7 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 /* POST: Yapay zeka ile yeni kombin oluştur */
-router.post("/generate", verifyToken,checkClothingCount ,generateAndSaveOutfit);
+router.post("/generate", verifyToken, checkClothingCount, generateAndSaveOutfit);
 
 /* PUT: Kombin durumunu güncelle (beğen/beğenme) */
 router.put("/status/:id", verifyToken, updateOutfitStatus);
@@ -72,9 +72,9 @@ router.post("/add", verifyToken, async (req, res) => {
 /* DELETE: Kombin Sil */
 router.delete("/delete/:id", verifyToken, async (req, res) => {
     try {
-        const deleted = await Outfits.findOneAndDelete({ 
-            _id: req.params.id, 
-            userId: req.user.id 
+        const deleted = await Outfits.findOneAndDelete({
+            _id: req.params.id,
+            userId: req.user.id
         });
 
         if (!deleted) {

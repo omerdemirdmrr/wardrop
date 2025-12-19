@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
-const API_KEY = "AIzaSyA8q3onICrRoa9_wF-OHha47Iz5K7HkwII"; // Kendi API Key'ini buraya yaz
+const API_KEY = "AIzaSyBMUsGVI407Q9LFwWxso9OoCF3RSv-Th-0"; // Kendi API Key'ini buraya yaz
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 

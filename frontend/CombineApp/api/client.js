@@ -7,7 +7,7 @@ import { Platform } from 'react-native';
 // - Fiziksel Cihaz: Bilgisayarınızın IP adresini kullanın (aynı WiFi'de olmalı)
 
 // IP adresini buradan değiştirebilirsiniz
-const BACKEND_IP = '192.168.1.102';
+const BACKEND_IP = '172.26.212.179';
 const BACKEND_PORT = '4000';
 
 // Android Emulator için özel IP
