@@ -5,6 +5,7 @@ var response = require("../lib/Response");
 var _enum = require("../config/enum");
 var verifyToken = require("../lib/authToken");
 const { generateAndSaveOutfit, updateOutfitStatus } = require('../controllers/outfitController');
+const checkClothingCount = require('../controllers/checkClothing');
 
 /* GET: Kullanıcının tüm kombinlerini getir (Kıyafet detaylarıyla birlikte) */
 router.get("/", verifyToken, async (req, res) => {
@@ -24,7 +25,7 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 /* POST: Yapay zeka ile yeni kombin oluştur */
-router.post("/generate", verifyToken, generateAndSaveOutfit);
+router.post("/generate", verifyToken,checkClothingCount ,generateAndSaveOutfit);
 
 /* PUT: Kombin durumunu güncelle (beğen/beğenme) */
 router.put("/status/:id", verifyToken, updateOutfitStatus);
