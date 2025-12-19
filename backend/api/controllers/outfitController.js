@@ -63,10 +63,11 @@ const generateAndSaveOutfit = async (req, res, next) => {
     console.log("finalOutfit after saving and populating:", finalOutfit);
 
 
-    res.status(201).json(Response.successResponse(201, {
-      message: "Outfit generated successfully.",
-      description: finalOutfit
-    }));
+    res.status(201).json( {
+      success: true,
+      data: finalOutfit,
+      description: "Outfit generated and saved successfully."
+    });
       
 
   } catch (error) {
