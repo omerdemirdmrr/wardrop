@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
-const API_KEY = "AIzaSyBMUsGVI407Q9LFwWxso9OoCF3RSv-Th-0"; // Kendi API Key'ini buraya yaz
+const API_KEY = "AIzaSyA4aWP7PvRZerQGZ1ibn3J8ry8d1DiSRrw"; // Kendi API Key'ini buraya yaz
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
@@ -16,6 +16,9 @@ const complexClothingSchema = {
     kiyafet_analizi: {
       type: SchemaType.OBJECT,
       properties: {
+        success: {
+          type: SchemaType.BOOLEAN
+        },
         genel_bilgi: {
           type: SchemaType.OBJECT,
           properties: {
@@ -67,14 +70,15 @@ const complexClothingSchema = {
       required: ["genel_bilgi", "renk_paleti", "tasarim_detaylari", "malzeme_tahmini", "stil_kullanimi"]
     }
   },
-  required: ["id", "kiyafet_analizi"]
+  required: ["id", "kiyafet_analizi"],
+
 };
 
 export const analyzeImageWithAI = async (imageUri) => {
   console.log('AI Analysis (Complex JSON): Processing image...', imageUri);
 
   try {
-    const model = genAI.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
@@ -90,7 +94,9 @@ export const analyzeImageWithAI = async (imageUri) => {
     const prompt = `Bu kıyafeti bir moda uzmanı gibi analiz et. 
                     Çıktı tamamen Türkçe olmalı. 
                     Verilen JSON şemasına sadık kal.
-                    Renkleri ve kumaş detaylarını spesifik olarak tanımla (örn: 'Mavi' yerine 'Gece Mavisi').`;
+                    Renkleri ve kumaş detaylarını spesifik olarak tanımla
+                    eğer kıyafet dışıysa success alanı false yap.
+                    (örn: 'Mavi' yerine 'Gece Mavisi').`;
 
     const imagePart = {
       inlineData: {
@@ -100,8 +106,9 @@ export const analyzeImageWithAI = async (imageUri) => {
     };
 
     const result = await model.generateContent([prompt, imagePart]);
+    console.log(result.response);
     const response = await result.response;
-    
+
     const jsonString = response.text();
     const aiResponse = JSON.parse(jsonString);
 
@@ -110,10 +117,10 @@ export const analyzeImageWithAI = async (imageUri) => {
 
   } catch (error) {
     console.error("AI Analysis Failed:", error);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: error.message || "An unexpected error occurred",
-      data: null 
+      data: null
     };
   }
 };

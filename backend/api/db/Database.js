@@ -16,10 +16,6 @@ class Database{
         try{
             console.log("Database connecting....");
             console.log("Connection string:", options.CONNECTION_STRING);
-            
-            
-            
-            
             let db = await mongoose.connect(options.CONNECTION_STRING);
             this.mongoConnection = db; 
             console.log("Database connected successfully");

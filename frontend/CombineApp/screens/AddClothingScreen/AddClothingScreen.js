@@ -47,7 +47,7 @@ const AddClothingScreen = ({ navigation }) => {
     try {
         const response = await analyzeImageWithAI(uri);
         
-        if (response.success && response.data && response.data.kiyafet_analizi) {
+        if (response.success && response.data && response.data.kiyafet_analizi && response.data.kiyafet_analizi.success) {
             const analysis = response.data.kiyafet_analizi;
             setAiResult(response.data);
             
