@@ -95,7 +95,7 @@ export const analyzeImageWithAI = async (imageUri) => {
                     Çıktı tamamen Türkçe olmalı. 
                     Verilen JSON şemasına sadık kal.
                     Renkleri ve kumaş detaylarını spesifik olarak tanımla
-                    eğer kıyafet dışıysa success alanı false yap.
+                    eğer giyim ürünü (ayakkabı, üst giyim, alt giyim, her türlü kıyafet, mont vs.) değilse  success alanı false yap.
                     (örn: 'Mavi' yerine 'Gece Mavisi').`;
 
     const imagePart = {
