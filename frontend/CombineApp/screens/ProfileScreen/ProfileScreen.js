@@ -58,11 +58,11 @@ const ProfileScreen = ({ navigation }) => {
         >
             <SafeAreaView style={styles.container}>
                 <ScrollView>
-                    
+
                     {/* --- ÜST BAR (AYARLAR BUTONU) --- */}
                     {/* flex:1 sol tarafı iterek butonu sağa yaslar */}
                     <View style={styles.topBar}>
-                        <View style={{ flex: 1 }} /> 
+                        <View style={{ flex: 1 }} />
                         <TouchableOpacity onPress={onSettingsPress} style={styles.settingsButton}>
                             <Ionicons name="settings-outline" size={26} color={COLORS.textPrimary} />
                         </TouchableOpacity>
@@ -107,17 +107,8 @@ const ProfileScreen = ({ navigation }) => {
                                 </View>
                             ))}
                         </View>
-
-                        {/* 3. Önemli Tarihler */}
-                        <Text style={styles.infoTitle}>Important Dates</Text>
-                        {(user.importantDates || []).map((date) => (
-                            <View key={date.id} style={styles.dateItem}>
-                                <Text style={styles.dateTitle}>{date.title}</Text>
-                                <Text style={styles.dateText}>{date.date}</Text>
-                            </View>
-                        ))}
                     </View>
-                    
+
                     {/* Alt kısımda kaydırma payı */}
                     <View style={{ height: 30 }} />
                 </ScrollView>
@@ -226,21 +217,6 @@ const styles = StyleSheet.create({
     styleTagText: {
         color: COLORS.primaryText,
         fontWeight: 'bold',
-    },
-    dateItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.secondary,
-    },
-    dateTitle: {
-        fontSize: 16,
-        color: COLORS.textPrimary,
-    },
-    dateText: {
-        fontSize: 16,
-        color: COLORS.textSecondary,
     }
 });
 

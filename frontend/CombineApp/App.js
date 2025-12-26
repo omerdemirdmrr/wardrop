@@ -17,7 +17,7 @@ import ProfileScreen from "./screens/ProfileScreen/ProfileScreen";
 import SettingsScreen from "./screens/SettingsScreen/SettingsScreen";
 import EditProfileScreen from "./screens/EditProfileScreen/EditProfileScreen";
 import EditStyleScreen from "./screens/EditStyleScreen/EditStyleScreen";
-import EditDatesScreen from "./screens/EditDatesScreen/EditDatesScreen";
+
 import StatisticsScreen from "./screens/StatisticsScreen/StatisticsScreen";
 import AddClothingScreen from "./screens/AddClothingScreen/AddClothingScreen";
 import OutfitScreen from "./screens/OutfitScreen/OutfitScreen";
@@ -182,11 +182,7 @@ function AppStack() {
         component={EditStyleScreen}
         options={{ title: "Style & Colors" }}
       />
-      <Stack.Screen
-        name="EditDates"
-        component={EditDatesScreen}
-        options={{ title: "Important Dates" }}
-      />
+
       <Stack.Screen
         name="Statistics"
         component={StatisticsScreen}
