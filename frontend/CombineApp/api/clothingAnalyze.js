@@ -102,7 +102,7 @@ export const analyzeImageWithAI = async (imageUri) => {
                     Verilen JSON şemasına sadık kal.
                     'genel_bilgi.mevsim' alanını mutlaka doldur. "Spor" bir mevsim değildir.
                     Renkleri ve kumaş detaylarını spesifik olarak tanımla
-                    eğer giyim ürünü (ayakkabı, üst giyim, alt giyim, her türlü kıyafet, mont vs.) değilse  success alanı false yap.
+                    eğer giyim ürünü (ayakkabı, üst giyim, alt giyim, her türlü kıyafet, mont ve aksesuarlar yani bileklik, çantalar, takılar şal, saat vs.) değilse  success alanı false yap.
                     (örn: 'Mavi' yerine 'Gece Mavisi').`;
 
     const imagePart = {
