@@ -57,7 +57,7 @@ const ClothingDetailModal = ({ visible, item, onClose, onUpdateTrigger }) => {
           style: "destructive", 
           onPress: async () => {
             setLoading(true);
-            const res = await deleteClothingItem(item.id);
+            const res = await deleteClothingItem(item._id || item.id);
             setLoading(false);
             if (res.success) {
                onUpdateTrigger(); // Listeyi yenilemesi için ana sayfaya haber ver
