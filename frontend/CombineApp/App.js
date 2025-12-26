@@ -229,7 +229,7 @@ function RootNavigator() {
   return (
     // login ekranı için true yerine token yazın
     <NavigationContainer>
-      {true ? <AppStack /> : <AuthStack />}
+      {token ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }

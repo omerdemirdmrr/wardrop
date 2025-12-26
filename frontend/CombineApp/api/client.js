@@ -7,7 +7,7 @@ import { Platform } from 'react-native';
 // - Fiziksel Cihaz: Bilgisayarınızın IP adresini kullanın (aynı WiFi'de olmalı)
 
 // IP ve Port .env dosyasından okunuyor
-const BACKEND_IP = process.env.EXPO_PUBLIC_BACKEND_IP || '192.168.66.3';
+const BACKEND_IP = process.env.EXPO_PUBLIC_BACKEND_IP || '10.1.245.82';
 const BACKEND_PORT = process.env.EXPO_PUBLIC_BACKEND_PORT || '4000';
 
 // Android Emulator için özel IP
