@@ -25,9 +25,14 @@ const complexClothingSchema = {
           properties: {
             kategori: { type: SchemaType.STRING, description: "Örn: Dış Giyim, Üst Giyim" },
             tur: { type: SchemaType.STRING, description: "Örn: Trençkot, Kazak, T-shirt" },
-            cinsiyet_grubu: { type: SchemaType.STRING, description: "Kadın, Erkek veya Unisex" }
+            cinsiyet_grubu: { type: SchemaType.STRING, description: "Kadın, Erkek veya Unisex" },
+            mevsim: {
+              type: SchemaType.STRING,
+              enum: ["İlkbahar", "Yaz", "Sonbahar", "Kış", "Tüm Mevsimler"],
+              description: "Select the most appropriate season."
+            }
           },
-          required: ["kategori", "tur", "cinsiyet_grubu"]
+          required: ["kategori", "tur", "cinsiyet_grubu", "mevsim"]
         },
         renk_paleti: {
           type: SchemaType.OBJECT,
@@ -95,6 +100,7 @@ export const analyzeImageWithAI = async (imageUri) => {
     const prompt = `Bu kıyafeti bir moda uzmanı gibi analiz et. 
                     Çıktı tamamen Türkçe olmalı. 
                     Verilen JSON şemasına sadık kal.
+                    'genel_bilgi.mevsim' alanını mutlaka doldur. "Spor" bir mevsim değildir.
                     Renkleri ve kumaş detaylarını spesifik olarak tanımla
                     eğer giyim ürünü (ayakkabı, üst giyim, alt giyim, her türlü kıyafet, mont ve aksesuarlar yani bileklik, çantalar, takılar şal, saat vs.) değilse  success alanı false yap.
                     (örn: 'Mavi' yerine 'Gece Mavisi').`;

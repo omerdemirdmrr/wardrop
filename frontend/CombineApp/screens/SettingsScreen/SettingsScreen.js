@@ -1,5 +1,5 @@
 import React from 'react';
-import { 
+import {
   View, Text, StyleSheet, TouchableOpacity, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,30 +30,26 @@ const SettingsScreen = ({ navigation }) => {
       { text: "Çıkış Yap", onPress: () => logout(), style: "destructive" }, // Kırmızı buton
     ]);
   };
-  
+
   return (
     <LinearGradient colors={COLORS.gradient} style={styles.gradient}>
       <SafeAreaView style={styles.container}>
-        <View> 
+        <View>
           {/* --- DÜZENLEME MENÜLERİ --- */}
           <View style={styles.menuContainer}>
-            <SettingsMenuItem 
-              title="Profili Düzenle" 
+            <SettingsMenuItem
+              title="Profili Düzenle"
               iconName="person-outline"
               onPress={() => navigation.navigate('EditProfile')}
             />
-            <SettingsMenuItem 
-              title="Stil ve Renkleri Düzenle" 
+            <SettingsMenuItem
+              title="Stil ve Renkleri Düzenle"
               iconName="color-palette-outline"
               onPress={() => navigation.navigate('EditStyle')}
             />
-            <SettingsMenuItem 
-              title="Önemli Tarihleri Düzenle" 
-              iconName="calendar-outline"
-              onPress={() => navigation.navigate('EditDates')}
-            />
-            <SettingsMenuItem 
-              title="Change Password" 
+
+            <SettingsMenuItem
+              title="Change Password"
               iconName="lock-closed-outline"
               onPress={() => navigation.navigate('ChangePassword')}
             />
@@ -74,12 +70,12 @@ const SettingsScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
-  container: { 
+  container: {
     flex: 1,
   },
   menuContainer: {
     // YENİ: Başlığın 'solid' olduğunu varsayarak 10px boşluk
-    marginTop: 10, 
+    marginTop: 10,
     marginHorizontal: 10,
     backgroundColor: COLORS.card,
     borderRadius: 10,

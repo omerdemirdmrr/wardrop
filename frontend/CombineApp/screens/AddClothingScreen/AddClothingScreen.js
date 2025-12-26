@@ -52,7 +52,7 @@ const AddClothingScreen = ({ navigation }) => {
         const ikincilRenk = analysis.renk_paleti?.ikincil_renk;
         const kategori = analysis.genel_bilgi?.kategori;
         const tur = analysis.genel_bilgi?.tur;
-        const mevsim = analysis.stil_kullanimi?.tarz?.[0] || 'Tüm Mevsimler';
+        const mevsim = analysis.genel_bilgi?.mevsim || 'Tüm Mevsimler';
 
         const foundColor1 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === anaRenk?.toLowerCase());
         const foundColor2 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === ikincilRenk?.toLowerCase());
@@ -64,7 +64,9 @@ const AddClothingScreen = ({ navigation }) => {
         setColor1(finalColor1);
         setColor2(finalColor2);
 
-        setName(`${mevsim} ${tur}`);
+        // İsim oluştururken ana renk kullanılıyor
+        const namePrefix = anaRenk ? `${anaRenk} ` : '';
+        setName(`${namePrefix}${tur}`);
 
       } else {
         const errorMessage = response.error || "Görüntü analiz edilemedi.";
@@ -221,7 +223,7 @@ const AddClothingScreen = ({ navigation }) => {
                 </View>
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>Mevsim:</Text>
-                  <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.stil_kullanimi?.tarz?.[0] || 'Tüm Mevsimler'}</Text>
+                  <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.genel_bilgi?.mevsim || 'Tüm Mevsimler'}</Text>
                 </View>
               </View>
 
