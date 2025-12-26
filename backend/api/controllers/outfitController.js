@@ -1,6 +1,5 @@
 const ClothingItem = require('../db/models/ClothingItems');
 const Outfit = require('../db/models/Outfits');
-const OutfitItem = require('../db/models/OutfitItems');
 const { generateOutfitWithGemini } = require('../services/geminiService');
 const Response = require('../lib/Response');
 const CustomError = require('../lib/CustomError');
