@@ -3,7 +3,6 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 // Gerekli modelleri import edelim. Bu yolların projenizin yapısına göre doğru olduğundan emin olun.
 const ClothingItem = require('../db/models/ClothingItems'); 
 const Outfit = require('../db/models/Outfits');
-const OutfitItem = require('../db/models/OutfitItems');
 const CustomError  = require('../lib/CustomError');
 
 // ÖNEMLİ: @google/generative-ai paketini backend/api dizininde kurmanız gerekir:

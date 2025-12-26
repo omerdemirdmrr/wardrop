@@ -1,8 +1,12 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
+<<<<<<< HEAD
 // API Key .env dosyasından okunuyor
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "AIzaSyC4lC2-OqayitW_ttRTBtFcQCNQYdjYzrg";
+=======
+const API_KEY = "AIzaSyDOgfczFmgfB7sTJy5nvH1hxPm4wuxKNqk"; // Kendi API Key'ini buraya yaz
+>>>>>>> c03a27ee2b78bc0fe2d0c2e6fb52eed528bef1ed
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
@@ -96,7 +100,7 @@ export const analyzeImageWithAI = async (imageUri) => {
                     Çıktı tamamen Türkçe olmalı. 
                     Verilen JSON şemasına sadık kal.
                     Renkleri ve kumaş detaylarını spesifik olarak tanımla
-                    eğer kıyafet dışıysa success alanı false yap.
+                    eğer giyim ürünü (ayakkabı, üst giyim, alt giyim, her türlü kıyafet, mont vs.) değilse  success alanı false yap.
                     (örn: 'Mavi' yerine 'Gece Mavisi').`;
 
     const imagePart = {
