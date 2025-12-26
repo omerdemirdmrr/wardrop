@@ -14,6 +14,7 @@ const schema = mongoose.Schema({
     category: { type: String, required: true},
     subCategory: { type: String, required: true},
     imageUrl: String,
+    imagePublicId: String,
     material: String,
     brand: String,
     occasionId: {

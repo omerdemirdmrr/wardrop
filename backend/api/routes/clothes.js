@@ -57,7 +57,7 @@ router.post("/add", verifyToken, upload.single("image"), async (req, res) => {
             console.log("[/clothes/add] - Starting Cloudinary upload...");
             const cloudinaryUpload = await new Promise((resolve, reject) => {
                 cloudinary.uploader.upload_stream(
-                    { folder: "CombineApp" },
+                    { folder: "CombineApp/clothes" },
                     (error, result) => {
                         if (error) {
                             console.error("[/clothes/add] - Cloudinary Error:", error);

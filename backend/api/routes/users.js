@@ -7,6 +7,8 @@ var User = require("../db/models/Users")
 var bcrypt = require("bcrypt")
 var jwt = require("jsonwebtoken");
 var verifyToken = require("../lib/authToken");
+const upload = require("../lib/upload");
+const cloudinary = require("../config/cloudinary");
 
 /* 1. SIGNUP (KAYIT OL) */
 router.post("/signup", async (req, res) => {
@@ -131,14 +133,115 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get("/profile", verifyToken, async (req, res) => {
+  /* UPDATE PROFILE (USERNAME + PHOTO) */
+router.put(
+  "/profile",
+  verifyToken,
+  upload.single("image"),
+  async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select("-password");
-        if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
-        res.json({ message: `Hoşgeldin ${user.username}`, user });
+      const userId = req.user.id;
+      const { username } = req.body;
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json(
+          response.errorResponse(_enum.HTTP_STATUS.NOT_FOUND, {
+            message: "User not found",
+          })
+        );
+      }
+
+      /* 1️⃣ Username güncelle */
+      if (username) {
+        user.username = username;
+      }
+
+      /* 2️⃣ Fotoğraf varsa Cloudinary upload */
+      if (req.file) {
+        // Eski foto varsa sil
+        if (user.imagePublicId) {
+          await cloudinary.uploader.destroy(user.imagePublicId);
+        }
+
+        const uploadResult = await cloudinary.uploader.upload_stream(
+          {
+            folder: "CombineApp/profiles",
+            resource_type: "image",
+          },
+          async (error, result) => {
+            if (error) {
+              return res.status(500).json(
+                response.errorResponse(
+                  _enum.HTTP_STATUS.INTERNAL_SERVER_ERROR,
+                  error.message
+                )
+              );
+            }
+
+            user.imageUrl = result.secure_url;
+            user.imagePublicId = result.public_id;
+
+            await user.save();
+
+            return res.json(
+              response.successResponse(_enum.HTTP_STATUS.OK, {
+                message: "Profile updated successfully",
+                user: {
+                  username: user.username,
+                  imageUrl: user.imageUrl,
+                },
+              })
+            );
+          }
+        );
+
+        uploadResult.end(req.file.buffer);
+        return;
+      }
+
+      /* Foto yoksa sadece username güncelle */
+      await user.save();
+
+      return res.json(
+        response.successResponse(_enum.HTTP_STATUS.OK, {
+          message: "Profile updated successfully",
+          user: {
+            username: user.username,
+            imageUrl: user.imageUrl,
+          },
+        })
+      );
     } catch (err) {
-        res.status(500).json({ error: err.message });
+      console.error("Profile update error:", err);
+      return res.status(500).json(
+        response.errorResponse(
+          _enum.HTTP_STATUS.INTERNAL_SERVER_ERROR,
+          err.message
+        )
+      );
     }
+  }
+);
+
+
+
+router.get("/getprofile", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId).select("username email imageUrl");
+
+    return res.json({ message: "Profile fetched successfully", user });
+  } catch (err) {
+    console.error("Profile fetch error:", err);
+    return res.status(500).json(
+      response.errorResponse(
+        _enum.HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        err.message
+      )
+    );
+  }
+
 });
 
 
@@ -170,6 +273,87 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
       .json(response.errorResponse(_enum.HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message));
   }
 });
+
+/* CHANGE PREFERENCES (favoriteColors + stylePreferences) */
+router.put("/changepreferences", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { favoriteColors, stylePreferences } = req.body;
+
+    // En az bir alan gelmeli
+    if (!favoriteColors && !stylePreferences) {
+      return res.status(400).json(
+        response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
+          message: "No data provided",
+          description: "favoriteColors or stylePreferences required",
+        })
+      );
+    }
+
+    const updateData = {};
+
+    if (Array.isArray(favoriteColors)) {
+      updateData.favoriteColors = favoriteColors;
+    }
+
+    if (Array.isArray(stylePreferences)) {
+      updateData.stylePreferences = stylePreferences;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json(
+        response.errorResponse(_enum.HTTP_STATUS.NOT_FOUND, {
+          message: "User not found",
+        })
+      );
+    }
+
+    return res.json(
+      response.successResponse(_enum.HTTP_STATUS.OK, {
+        message: "Preferences updated successfully",
+        preferences: {
+          favoriteColors: updatedUser.favoriteColors,
+          stylePreferences: updatedUser.stylePreferences,
+        },
+      })
+    );
+  } catch (err) {
+    console.error("Change preferences error:", err);
+    return res.status(500).json(
+      response.errorResponse(
+        _enum.HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        err.message
+      )
+    );
+  }
+});
+
+
+
+router.get("/getpreferences", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId).select("favoriteColors stylePreferences");
+
+    return res.json({ message: "Preferences fetched successfully", user });
+  } catch (err) {
+    console.error("Preferences fetch error:", err);
+    return res.status(500).json(
+      response.errorResponse(
+        _enum.HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        err.message
+      )
+    );
+  }
+
+});
+
 
 
 module.exports = router;
