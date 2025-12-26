@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image, 
-  TextInput, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  TextInput,
   ScrollView,
   ActivityIndicator,
-  Alert 
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,14 +20,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { saveClothingItem } from '../../api/clothing';
 import { analyzeImageWithAI } from '../../api/clothingAnalyze';
 import { COLORS_OPTIONS } from '../../constants/options'; // Renk listesi
-import SelectionModal from '../../components/SelectionModal'; // Seçim Modalı
 
 const AddClothingScreen = ({ navigation }) => {
   // --- STATE ---
   const [imageUri, setImageUri] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false); 
-  
+  const [analyzing, setAnalyzing] = useState(false);
+
   // AI Sonuçları ve Kullanıcı Düzenlemeleri
   const [aiResult, setAiResult] = useState(null);
   const [name, setName] = useState(''); // Kullanıcının gireceği isim
@@ -35,45 +34,47 @@ const AddClothingScreen = ({ navigation }) => {
   const [color2, setColor2] = useState(null); // Seçilen Renk 2 Objesi {label, value}
 
   // Modal Kontrolü
-  const [modalVisible, setModalVisible] = useState(false);
-  const [activeColorSelection, setActiveColorSelection] = useState(null); // 'color1' veya 'color2'
 
   // --- RESİM SEÇME VE ANALİZ ---
   const handleImagePicked = async (uri) => {
     setImageUri(uri);
-    setAiResult(null); 
-    setAnalyzing(true); 
+    setAiResult(null);
+    setAnalyzing(true);
 
     try {
-        const response = await analyzeImageWithAI(uri);
-        
-        if (response.success && response.data && response.data.kiyafet_analizi && response.data.kiyafet_analizi.success) {
-            const analysis = response.data.kiyafet_analizi;
-            setAiResult(response.data);
-            
-            const anaRenk = analysis.renk_paleti?.ana_renk;
-            const ikincilRenk = analysis.renk_paleti?.ikincil_renk;
-            const kategori = analysis.genel_bilgi?.kategori;
-            const tur = analysis.genel_bilgi?.tur;
-            const mevsim = analysis.stil_kullanimi?.tarz?.[0] || 'Tüm Mevsimler';
+      const response = await analyzeImageWithAI(uri);
 
-            const foundColor1 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === anaRenk?.toLowerCase());
-            const foundColor2 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === ikincilRenk?.toLowerCase());
+      if (response.success && response.data && response.data.kiyafet_analizi && response.data.kiyafet_analizi.success) {
+        const analysis = response.data.kiyafet_analizi;
+        setAiResult(response.data);
 
-            setColor1(foundColor1 || null);
-            setColor2(foundColor2 || null);
-            
-            setName(`${mevsim} ${tur}`);
+        const anaRenk = analysis.renk_paleti?.ana_renk;
+        const ikincilRenk = analysis.renk_paleti?.ikincil_renk;
+        const kategori = analysis.genel_bilgi?.kategori;
+        const tur = analysis.genel_bilgi?.tur;
+        const mevsim = analysis.stil_kullanimi?.tarz?.[0] || 'Tüm Mevsimler';
 
-        } else {
-            const errorMessage = response.error || "Görüntü analiz edilemedi.";
-            Alert.alert("Hata", errorMessage);
-        }
+        const foundColor1 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === anaRenk?.toLowerCase());
+        const foundColor2 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === ikincilRenk?.toLowerCase());
+
+        // EĞER LİSTEDE YOKSA, AI'DAN GELENİ KABUL ET
+        const finalColor1 = foundColor1 || (anaRenk ? { label: anaRenk, value: anaRenk } : null);
+        const finalColor2 = foundColor2 || (ikincilRenk ? { label: ikincilRenk, value: ikincilRenk } : null);
+
+        setColor1(finalColor1);
+        setColor2(finalColor2);
+
+        setName(`${mevsim} ${tur}`);
+
+      } else {
+        const errorMessage = response.error || "Görüntü analiz edilemedi.";
+        Alert.alert("Hata", errorMessage);
+      }
     } catch (error) {
-        console.error(error);
-        Alert.alert("Hata", "Analiz sırasında bir sorun oluştu.");
+      console.error(error);
+      Alert.alert("Hata", "Analiz sırasında bir sorun oluştu.");
     } finally {
-        setAnalyzing(false);
+      setAnalyzing(false);
     }
   };
 
@@ -112,31 +113,16 @@ const AddClothingScreen = ({ navigation }) => {
     }
   };
 
-  // --- RENK SEÇİMİ ---
-  const openColorModal = (selectionType) => {
-    setActiveColorSelection(selectionType);
-    setModalVisible(true);
-  };
-
-  const handleColorSelect = (item) => {
-    if (activeColorSelection === 'color1') {
-        setColor1(item);
-    } else {
-        setColor2(item);
-    }
-    // Modalı kapatma işlemi SelectionModal içinde yapılıyor veya burada setModalVisible(false) çağırabiliriz.
-    // SelectionModal component'in mevcut yapısında onSelect ve onClose ayrı çalışıyor.
-  };
 
   // --- KAYDETME İŞLEMİ (Arka Plan Silme Dahil) ---
   const handleSave = async () => {
     if (!name) {
-        Alert.alert('Eksik Bilgi', 'Lütfen kıyafete bir isim verin.');
-        return;
+      Alert.alert('Eksik Bilgi', 'Lütfen kıyafete bir isim verin.');
+      return;
     }
     if (!color1) {
-        Alert.alert('Eksik Bilgi', 'Lütfen en az bir ana renk seçin.');
-        return;
+      Alert.alert('Eksik Bilgi', 'Lütfen en az bir ana renk seçin.');
+      return;
     }
 
     setLoading(true);
@@ -147,7 +133,7 @@ const AddClothingScreen = ({ navigation }) => {
         ...aiResult,          // category, season vb.
         name: name,           // Kullanıcının girdiği isim
         color1: color1.value, // Seçilen rengin değeri (örn: 'red')
-        color2: color2 ? color2.value : null, 
+        color2: color2 ? color2.value : null,
         imageUrl: imageUri // Orjinal resim
       };
 
@@ -168,24 +154,12 @@ const AddClothingScreen = ({ navigation }) => {
     }
   };
 
-  // Renk Seçim Kutusu Bileşeni
-  const ColorSelector = ({ label, value, onPress }) => (
-    <View style={styles.inputGroup}>
-        <Text style={styles.label}>{label}</Text>
-        <TouchableOpacity style={styles.selector} onPress={onPress}>
-            <Text style={value ? styles.selectorText : styles.placeholderText}>
-                {value ? value.label : "Renk Seçiniz"}
-            </Text>
-            <Ionicons name="chevron-down" size={20} color={COLORS.gray} />
-        </TouchableOpacity>
-    </View>
-  );
 
   return (
     <LinearGradient colors={COLORS.gradient} style={styles.gradient}>
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-          
+
           {/* 1. RESİM ALANI */}
           <View style={styles.imagePickerContainer}>
             {imageUri ? (
@@ -196,16 +170,16 @@ const AddClothingScreen = ({ navigation }) => {
                 <Text style={styles.placeholderText}>Kıyafetini Yükle</Text>
               </View>
             )}
-            
+
             {/* Yükleniyor Overlay */}
             {analyzing && (
-                <View style={styles.analyzingOverlay}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
-                    <Text style={styles.analyzingText}>Yapay Zeka Analiz Ediyor...</Text>
-                </View>
+              <View style={styles.analyzingOverlay}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text style={styles.analyzingText}>Yapay Zeka Analiz Ediyor...</Text>
+              </View>
             )}
           </View>
-          
+
           {/* 2. BUTONLAR (Resim yoksa veya analiz bitmediyse) */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.imageButton} onPress={pickImageCamera} disabled={loading || analyzing}>
@@ -217,76 +191,64 @@ const AddClothingScreen = ({ navigation }) => {
               <Text style={styles.imageButtonText}>Galeri</Text>
             </TouchableOpacity>
           </View>
-          
+
           {/* 3. SONUÇ VE DÜZENLEME ALANI */}
           {aiResult && !analyzing && (
             <View style={styles.resultContainer}>
-                <Text style={styles.sectionTitle}>Analiz Tamamlandı</Text>
-                
-                {/* İSİM GİRİŞİ */}
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Kıyafet Adı</Text>
-                    <TextInput 
-                        style={styles.textInput}
-                        value={name}
-                        onChangeText={setName}
-                        placeholder="Örn: Mavi Gömleğim"
-                        placeholderTextColor={COLORS.gray}
-                    />
-                </View>
+              <Text style={styles.sectionTitle}>Analiz Tamamlandı</Text>
 
-                {/* AI BİLGİ KARTI */}
-                <View style={styles.infoCard}>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Kategori:</Text>
-                        <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.genel_bilgi?.kategori}</Text>
-                    </View>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Tür:</Text>
-                        <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.genel_bilgi?.tur}</Text>
-                    </View>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Mevsim:</Text>
-                        <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.stil_kullanimi?.tarz?.[0] || 'Tüm Mevsimler'}</Text>
-                    </View>
-                </View>
-
-                <Text style={styles.instructionText}>Renkleri aşağıdan değiştirebilirsin:</Text>
-
-                {/* RENK SEÇİMLERİ (Dropdown) */}
-                <ColorSelector 
-                    label="Baskın Renk (Color 1)" 
-                    value={color1} 
-                    onPress={() => openColorModal('color1')} 
+              {/* İSİM GİRİŞİ */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Kıyafet Adı</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Örn: Mavi Gömleğim"
+                  placeholderTextColor={COLORS.gray}
                 />
-                
-                <ColorSelector 
-                    label="İkincil Renk (Color 2)" 
-                    value={color2} 
-                    onPress={() => openColorModal('color2')} 
-                />
+              </View>
 
-                {/* KAYDET BUTONU */}
-                <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
-                    {loading ? (
-                        <ActivityIndicator color={COLORS.primaryText} />
-                    ) : (
-                        <Text style={styles.saveButtonText}>Kaydet</Text>
-                    )}
-                </TouchableOpacity>
+              {/* AI BİLGİ KARTI */}
+              <View style={styles.infoCard}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Kategori:</Text>
+                  <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.genel_bilgi?.kategori}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Tür:</Text>
+                  <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.genel_bilgi?.tur}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Mevsim:</Text>
+                  <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.stil_kullanimi?.tarz?.[0] || 'Tüm Mevsimler'}</Text>
+                </View>
+              </View>
+
+              <View style={styles.infoCard}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Baskın Renk:</Text>
+                  <Text style={styles.infoValue}>{color1 ? color1.label : 'Belirlenemedi'}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>İkincil Renk:</Text>
+                  <Text style={styles.infoValue}>{color2 ? color2.label : '-'}</Text>
+                </View>
+              </View>
+
+              {/* KAYDET BUTONU */}
+              <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator color={COLORS.primaryText} />
+                ) : (
+                  <Text style={styles.saveButtonText}>Kaydet</Text>
+                )}
+              </TouchableOpacity>
             </View>
           )}
 
         </ScrollView>
 
-        {/* RENK SEÇİM MODALI */}
-        <SelectionModal 
-            visible={modalVisible}
-            options={COLORS_OPTIONS}
-            onSelect={handleColorSelect}
-            onClose={() => setModalVisible(false)}
-            modalTitle="Renk Seçin"
-        />
 
       </SafeAreaView>
     </LinearGradient>
@@ -346,9 +308,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   imageButtonText: {
-    color: COLORS.white, 
-    fontWeight: 'bold', 
-    marginLeft: 8 
+    color: COLORS.white,
+    fontWeight: 'bold',
+    marginLeft: 8
   },
   resultContainer: {
     backgroundColor: COLORS.card,

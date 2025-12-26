@@ -96,9 +96,9 @@ function MainTabs() {
           backgroundColor: COLORS.primary,
           borderTopWidth: 0,
           elevation: 0,
-          paddingTop: 10, 
+          paddingTop: 10,
           paddingBottom: 80,
-          height: 90, 
+          height: 90,
           marginTop: 0,
         },
         tabBarItemStyle: {
@@ -106,7 +106,7 @@ function MainTabs() {
           alignItems: "center",
         },
 
-        headerShown: false, 
+        headerShown: false,
       }}
     >
       <Tab.Screen
@@ -148,7 +148,7 @@ function MainTabs() {
           headerShown: true,
           ...darkScreenOptions,
           tabBarIcon: ({ color }) => (
-             <Ionicons name="shirt-outline" size={28} color={color} />
+            <Ionicons name="shirt-outline" size={28} color={color} />
           ),
         }}
       />
@@ -229,7 +229,7 @@ function RootNavigator() {
   return (
     // login ekranı için true yerine token yazın
     <NavigationContainer>
-      {token ? <AppStack /> : <AuthStack />}
+      {true ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }
