@@ -6,15 +6,9 @@ import { Platform } from 'react-native';
 // - iOS Simulator: localhost veya IP adresi kullanılabilir
 // - Fiziksel Cihaz: Bilgisayarınızın IP adresini kullanın (aynı WiFi'de olmalı)
 
-<<<<<<< HEAD
 // IP ve Port .env dosyasından okunuyor
 const BACKEND_IP = process.env.EXPO_PUBLIC_BACKEND_IP || '192.168.66.3';
 const BACKEND_PORT = process.env.EXPO_PUBLIC_BACKEND_PORT || '4000';
-=======
-// IP adresini buradan değiştirebilirsiniz
-const BACKEND_IP = '10.1.245.82';
-const BACKEND_PORT = '4000';
->>>>>>> c03a27ee2b78bc0fe2d0c2e6fb52eed528bef1ed
 
 // Android Emulator için özel IP
 const getBaseURL = () => {

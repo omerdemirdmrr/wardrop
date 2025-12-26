@@ -191,37 +191,35 @@ export const saveClothingItem = async (clothingData) => {
 // If you save an item using the real function above, it will NOT appear
 // in 'getClothingItems' below until you convert these to real API calls too.
 
-export const updateClothingItem = (updatedItem) => {
-  console.log("Simulating: Updating item...", updatedItem);
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Dummy veriyi güncelle
-      const index = dummyWardrobeData.findIndex(
-        (item) => item.id === updatedItem.id,
-      );
-      if (index !== -1) {
-        dummyWardrobeData[index] = {
-          ...dummyWardrobeData[index],
-          ...updatedItem,
-        };
-      }
-      resolve({ success: true, message: "Item updated successfully!" });
-    }, 1000);
-  });
+export const updateClothingItem = async (updatedItem) => {
+  try {
+    const response = await apiClient.put(`/clothes/update/${updatedItem._id || updatedItem.id}`, {
+      name: updatedItem.name,
+      color: updatedItem.color1 || updatedItem.color,
+      color1: updatedItem.color1,
+      color2: updatedItem.color2,
+    });
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error updating item:', error.response?.data || error.message);
+    return { 
+      success: false, 
+      message: error.response?.data?.error?.message || 'Güncelleme yapılamadı.' 
+    };
+  }
 };
 
-export const deleteClothingItem = (itemId) => {
-  console.log("Simulating: Deleting item...", itemId);
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Dummy veriden sil
-      const index = dummyWardrobeData.findIndex((item) => item.id === itemId);
-      if (index !== -1) {
-        dummyWardrobeData.splice(index, 1); // Listeden çıkar
-      }
-      resolve({ success: true, message: "Item deleted successfully!" });
-    }, 1000);
-  });
+export const deleteClothingItem = async (itemId) => {
+  try {
+    const response = await apiClient.delete(`/clothes/delete/${itemId}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error deleting item:', error.response?.data || error.message);
+    return { 
+      success: false, 
+      message: error.response?.data?.error?.message || 'Kıyafet silinirken bir hata oluştu.' 
+    };
+  }
 };
 
 export const getClothingItems = async () => {
