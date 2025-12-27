@@ -14,10 +14,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../colors";
-import apiClient from "../../api/client";
 import { Ionicons } from "@expo/vector-icons";
 import { useError } from "../../context/ErrorContext";
 import { errorHandler } from "../../utils";
+import { changePassword } from "../../api/users";
 
 const ChangePasswordScreen = ({ navigation }) => {
     const { showError } = useError();
@@ -26,7 +26,6 @@ const ChangePasswordScreen = ({ navigation }) => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [newPasswordFocused, setNewPasswordFocused] = useState(false);
-    const [isOldPasswordVerified, setIsOldPasswordVerified] = useState(false);
 
     // Şifre doğrulama: en az 6 karakter, en az 1 büyük, 1 küçük, 1 rakam ve 1 noktalama/özel karakter
     const validatePassword = (pwd) => {
@@ -43,25 +42,6 @@ const ChangePasswordScreen = ({ navigation }) => {
 
     const isMatch = newPassword && confirmPassword && newPassword === confirmPassword;
     const isNewPasswordValid = isLengthValid && hasUpper && hasLower && hasDigit && hasSpecial;
-
-    // --- ESKİ ŞİFRE DOĞRULAMA ---
-    const checkOldPassword = async () => {
-        if (!oldPassword) return; // Boşsa kontrol etme
-
-        try {
-            const response = await apiClient.post("/auth/verify-password", {
-                password: oldPassword
-            });
-            if (response.data && response.data.success) {
-                setIsOldPasswordVerified(true);
-            } else {
-                setIsOldPasswordVerified(false);
-            }
-        } catch (error) {
-            setIsOldPasswordVerified(false);
-            // Hata göstermeye gerek yok, sadece tik çıkmayacak.
-        }
-    };
 
     // --- ŞİFRE DEĞİŞTİRME MANTIĞI ---
     const handleChangePassword = async () => {
@@ -94,38 +74,17 @@ const ChangePasswordScreen = ({ navigation }) => {
             });
             return;
         }
-        
-        // 4. Eski şifre doğru mu? (Backend'de tekrar kontrol edilecek ama UI için)
-        if (!isOldPasswordVerified) {
-             // Kullanıcıya bir şans daha verelim hemen kontrol edelim
-             // (Belki blur olmadı)
-             try {
-                const verCheck = await apiClient.post("/auth/verify-password", { password: oldPassword });
-                if (!verCheck.data.success) {
-                    Alert.alert("Error", "Old password is incorrect");
-                    return;
-                }
-             } catch (e) {
-                 Alert.alert("Error", "Old password is incorrect or network error");
-                 return;
-             }
-        }
 
         setLoading(true);
-        try {
-            const response = await apiClient.post("/auth/change-password", {
-                oldPassword,
-                newPassword,
-            });
+        const result = await changePassword(oldPassword, newPassword);
+        setLoading(false);
 
-            if (response.data) {
-                navigation.goBack();
-            }
-        } catch (error) {
-            const standardError = errorHandler.handleApiError(error);
-            showError(errorHandler.formatErrorForUser(standardError));
-        } finally {
-            setLoading(false);
+        if (result.success) {
+            Alert.alert("Success", "Password changed successfully", [
+                { text: "OK", onPress: () => navigation.goBack() }
+            ]);
+        } else {
+            showError(errorHandler.formatErrorForUser(result.error));
         }
     };
 
@@ -150,21 +109,9 @@ const ChangePasswordScreen = ({ navigation }) => {
                                 placeholder="Old Password"
                                 placeholderTextColor={COLORS.gray}
                                 value={oldPassword}
-                                onChangeText={(text) => {
-                                    setOldPassword(text);
-                                    setIsOldPasswordVerified(false); // Değişince tiki kaldır
-                                }}
-                                onBlur={checkOldPassword} // Odak kaybolunca kontrol et
+                                onChangeText={setOldPassword}
                                 secureTextEntry
                             />
-                             {isOldPasswordVerified && (
-                                <Ionicons 
-                                    name="checkmark-circle" 
-                                    size={24} 
-                                    color="green" 
-                                    style={styles.checkIcon}
-                                />
-                            )}
                         </View>
 
                         {/* Yeni Şifre */}
@@ -192,60 +139,75 @@ const ChangePasswordScreen = ({ navigation }) => {
 
                         {/* Yeni Şifre Kuralları */}
                         {newPasswordFocused && (
-                            <View style={styles.passwordRequirements}>
+                            <View style={styles.requirementsContainer}>
                                 <Text style={styles.requirementsTitle}>
-                                    Password Rules:
+                                    Password Requirements
                                 </Text>
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        isLengthValid
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {isLengthValid ? "✓ " : "• "}At least 6 characters
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        hasUpper
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {hasUpper ? "✓ " : "• "}At least 1 uppercase letter
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        hasLower
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {hasLower ? "✓ " : "• "}At least 1 lowercase letter
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        hasDigit
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {hasDigit ? "✓ " : "• "}At least 1 digit
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        hasSpecial
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {hasSpecial ? "✓ " : "• "}At least 1 special character
-                                </Text>
+                                
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, isLengthValid && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={isLengthValid ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={isLengthValid ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, isLengthValid && styles.requirementLabelValid]}>
+                                        At least 6 characters
+                                    </Text>
+                                </View>
+
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, hasUpper && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={hasUpper ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={hasUpper ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, hasUpper && styles.requirementLabelValid]}>
+                                        At least 1 uppercase letter
+                                    </Text>
+                                </View>
+
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, hasLower && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={hasLower ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={hasLower ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, hasLower && styles.requirementLabelValid]}>
+                                        At least 1 lowercase letter
+                                    </Text>
+                                </View>
+
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, hasDigit && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={hasDigit ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={hasDigit ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, hasDigit && styles.requirementLabelValid]}>
+                                        At least 1 digit
+                                    </Text>
+                                </View>
+
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, hasSpecial && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={hasSpecial ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={hasSpecial ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, hasSpecial && styles.requirementLabelValid]}>
+                                        At least 1 special character
+                                    </Text>
+                                </View>
                             </View>
                         )}
 
@@ -349,26 +311,48 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "bold",
     },
-    passwordRequirements: {
-        backgroundColor: COLORS.lightGray,
-        borderRadius: 8,
-        padding: 15,
+    requirementsContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: 12,
+        padding: 16,
         marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(177, 59, 255, 0.2)',
     },
     requirementsTitle: {
         fontWeight: "bold",
-        marginBottom: 10,
-        color: COLORS.primary,
-    },
-    requirementText: {
+        marginBottom: 12,
+        color: COLORS.textPrimary,
         fontSize: 14,
-        marginBottom: 5,
     },
-    valid: {
-        color: "green",
+    requirementRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
     },
-    invalid: {
-        color: "red",
+    requirementIcon: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255, 107, 107, 0.15)',
+        borderWidth: 1.5,
+        borderColor: '#FF6B6B',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    requirementIconValid: {
+        backgroundColor: 'rgba(177, 59, 255, 0.15)',
+        borderColor: COLORS.primary,
+    },
+    requirementLabel: {
+        fontSize: 13,
+        color: '#999',
+        flex: 1,
+    },
+    requirementLabelValid: {
+        color: COLORS.textPrimary,
+        fontWeight: '500',
     },
 });
 
