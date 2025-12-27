@@ -13,14 +13,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../colors";
 import { useAuth } from "../../context/AuthContext";
+import { useError } from "../../context/ErrorContext";
+import { errorHandler } from "../../utils";
 
 const LoginScreen = ({ navigation }) => {
-    // --- STATE YÖNETİMİ ---
-    const [email, setEmail] = useState(""); // Kullanıcının girdiği e-posta
-    const [password, setPassword] = useState(""); // Kullanıcının girdiği şifre
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
 
-    // Context'ten login fonksiyonunu alıyoruz
     const { login } = useAuth();
+    const { showError } = useError();
 
     // Basit e-posta doğrulama
     const validateEmail = (email) => {
@@ -32,25 +33,34 @@ const LoginScreen = ({ navigation }) => {
     const handleLogin = async () => {
         const normalizedEmail = email.trim().toLowerCase();
 
-        // E-posta geçerli mi kontrol et
         if (!validateEmail(normalizedEmail)) {
-            Alert.alert("Invalid Email", "Please enter a valid email address.");
+            showError({
+                title: 'Validation Error',
+                message: 'Please enter a valid email address',
+                category: 'VALIDATION'
+            });
             return;
         }
 
-        // Şifre boş mu kontrolü (isteğe bağlı)
         if (!password || password.trim() === "") {
-            Alert.alert("Missing Information", "Please enter your password.");
+            showError({
+                title: 'Validation Error',
+                message: 'Please enter your password',
+                category: 'VALIDATION'
+            });
             return;
         }
 
         // 1. Context içindeki login fonksiyonunu çağır (API isteği orada yapılır)
-        const success = await login(normalizedEmail, password);
+        const result = await login(normalizedEmail, password);
 
-        // 2. Eğer giriş başarısızsa kullanıcıya uyarı ver
+        // 2. Eğer giriş başarısızsa kullanıcıya hata göster
+        if (!result.success) {
+            const standardError = errorHandler.handleApiError(result.error);
+            showError(errorHandler.formatErrorForUser(standardError));
+        }
         // NOT: Eğer giriş başarılı olursa, App.js'teki 'token' state'i değişeceği için
         // uygulama otomatik olarak Ana Sayfa'ya (MainTabs) geçiş yapacaktır.
-        // Bu yüzden burada navigation.navigate('Home') dememize gerek yok.
     };
 
     return (

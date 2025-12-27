@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import authStorage from "../auth/storage";
-import apiClient from "../api/client";
+import apiClient, { setLogoutCallback } from "../api/client";
 import { COLORS } from "../screens/colors";
 import * as Location from "expo-location";
 import { AppState } from "react-native";
@@ -227,6 +227,16 @@ export const AuthProvider = ({ children }) => {
         };
     }, []);
 
+    // --- AUTO-LOGOUT ON TOKEN EXPIRATION ---
+    useEffect(() => {
+        // Register logout callback for API client interceptor
+        setLogoutCallback(logout);
+        
+        return () => {
+            setLogoutCallback(null);
+        };
+    }, []);
+
     // --- KULLANICI GÜNCELLEME ---
     const updateUser = (newUserData) => {
         setUser((currentUser) => ({
@@ -241,7 +251,6 @@ export const AuthProvider = ({ children }) => {
                 email,
                 password,
             });
-            console.log("Login response:", response.data);
 
             if (response.data.token) {
                 setToken(response.data.token);
@@ -250,14 +259,22 @@ export const AuthProvider = ({ children }) => {
                 ] = `Bearer ${response.data.token}`;
                 await authStorage.storeToken(response.data.token);
 
-                if (response.data.user) {
-                    setUser(response.data.user);
+                // Fetch full user profile after successful login
+                try {
+                    const profileResponse = await apiClient.get("/users/getprofile");
+                    if (profileResponse.data && profileResponse.data.user) {
+                        setUser(profileResponse.data.user);
+                    }
+                } catch (profileError) {
+                    console.error("Failed to fetch user profile after login:", profileError);
                 }
-                return true;
+                
+                return { success: true };
             }
+            return { success: false, error: 'No token received' };
         } catch (error) {
             console.error("Login failed", error);
-            return false;
+            return { success: false, error: error };
         }
     };
 
@@ -277,9 +294,10 @@ export const AuthProvider = ({ children }) => {
             ] = `Bearer ${storedToken}`;
 
             try {
-                if (!user) { // sadece user null ise fetch et
-                    const response = await apiClient.get("/users/profile");
-                    if (response.data && response.data.user) setUser(response.data.user);
+                // Always fetch user profile when restoring token
+                const response = await apiClient.get("/users/getprofile");
+                if (response.data && response.data.user) {
+                    setUser(response.data.user);
                 }
             } catch (error) {
                 console.log("Failed to restore user profile:", error);

@@ -27,6 +27,13 @@ const apiClient = axios.create({
   },
 });
 
+// Logout callback - will be set by AuthContext
+let logoutCallback = null;
+
+export const setLogoutCallback = (callback) => {
+  logoutCallback = callback;
+};
+
 // Request interceptor - Her request'te log
 apiClient.interceptors.request.use(
   (config) => {
@@ -55,6 +62,15 @@ apiClient.interceptors.response.use(
       baseURL: error.config?.baseURL,
       fullURL: error.config?.baseURL + error.config?.url,
     });
+    
+    // Auto-logout on token expiration
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.log('🔒 Token expired or unauthorized, triggering logout...');
+      if (logoutCallback) {
+        logoutCallback();
+      }
+    }
+    
     return Promise.reject(error);
   }
 );

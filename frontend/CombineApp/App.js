@@ -5,6 +5,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ErrorProvider } from "./context/ErrorContext";
 import { COLORS } from "./colors";
 
 // Ekranlar
@@ -23,6 +24,7 @@ import AddClothingScreen from "./screens/AddClothingScreen/AddClothingScreen";
 import OutfitScreen from "./screens/OutfitScreen/OutfitScreen";
 import CreateOutfitScreen from "./screens/CreateOutfitScreen/CreateOutfitScreen";
 import ChangePasswordScreen from "./screens/ChangePasswordScreen/ChangePasswordScreen";
+import ErrorTestScreen from "./screens/ErrorTestScreen/ErrorTestScreen";
 
 const Stack = createStackNavigator(); // Ana Stack (Global sayfalar için)
 const Tab = createBottomTabNavigator();
@@ -198,6 +200,11 @@ function AppStack() {
         component={ChangePasswordScreen}
         options={{ title: "Change Password" }}
       />
+      <Stack.Screen
+        name="ErrorTest"
+        component={ErrorTestScreen}
+        options={{ title: "Error System Test" }}
+      />
     </Stack.Navigator>
   );
 }
@@ -212,7 +219,8 @@ function RootNavigator() {
       setLoading(false);
     };
     bootstrapAsync();
-  }, [restoreToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   if (loading) {
     return (
@@ -232,8 +240,10 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <RootNavigator />
-    </AuthProvider>
+    <ErrorProvider>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </ErrorProvider>
   );
 }

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../colors';
 import { useAuth } from '../../context/AuthContext';
+import { useError } from '../../context/ErrorContext';
 
 // Seçenek listeleri
 const AVAILABLE_STYLES = ['Casual', 'Minimalist', 'Streetwear', 'Boho', 'Vintage', 'Formal', 'Sporty'];
@@ -16,8 +17,8 @@ const AVAILABLE_COLORS = [
 
 const EditStyleScreen = ({ navigation }) => {
     const { user, updateUser } = useAuth();
+    const { showError } = useError();
 
-    // State'i kullanıcının mevcut tercihleriyle başlatıyoruz
     const [selectedColors, setSelectedColors] = useState(user.favoriteColors || []);
     const [selectedStyles, setSelectedStyles] = useState(user.stylePreferences || []);
 
@@ -28,11 +29,14 @@ const EditStyleScreen = ({ navigation }) => {
             // Zaten seçiliyse listeden çıkar
             setSelectedColors(selectedColors.filter(c => c !== color));
         } else {
-            // Seçili değilse ve limit (3) dolmadıysa ekle
             if (selectedColors.length < 3) {
                 setSelectedColors([...selectedColors, color]);
             } else {
-                Alert.alert("Maksimum 3 Renk", "En fazla 3 favori renk seçebilirsiniz.");
+                showError({
+                    title: 'Validation Error',
+                    message: 'Maximum 3 favorite colors allowed',
+                    category: 'VALIDATION'
+                });
             }
         }
     };

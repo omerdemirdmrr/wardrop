@@ -16,13 +16,15 @@ import { COLORS } from '../colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as clothingApi from '../../api/clothing';
+import { useError } from '../../context/ErrorContext';
+import { errorHandler } from '../../utils';
 import ClothingCard from '../../components/ClothingCard';
 import ClothingDetailModal from '../../components/ClothingDetailModal';
 import SelectionModal from '../../components/SelectionModal';
 import { CATEGORIES, COLORS_OPTIONS, SEASONS } from '../../constants/options';
 
 const WardrobeScreen = ({ navigation }) => {
-    // --- STATE ---
+    const { showError } = useError();
     const [clothes, setClothes] = useState([]);           
     const [loading, setLoading] = useState(true);         
     
@@ -66,16 +68,22 @@ const WardrobeScreen = ({ navigation }) => {
         setLoading(true);
         try {
             const response = await clothingApi.getClothingItems();
+            
+            if (!response.success) {
+                showError(errorHandler.formatErrorForUser(response.error));
+                setClothes([]);
+                return;
+            }
+            
             if (response && Array.isArray(response.data)) {
                 setClothes(response.data);          
                 setFilteredClothes(response.data);  
             } else {
-                Alert.alert("Hata", "Kıyafetler yüklenemedi.");
                 setClothes([]);
             }
         } catch (error) {
-            console.error("Kıyafet çekme hatası:", error);
-            Alert.alert("Hata", "Beklenmedik bir hata oluştu.");
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
         } finally {
             setLoading(false);
         }
@@ -116,7 +124,7 @@ const WardrobeScreen = ({ navigation }) => {
     }, [clothes, searchQuery, selectedCategory, selectedColor, selectedSeason]);
 
     // --- HANDLERS ---
-    const handleCardLongPress = (item) => {
+    const handleCardPress = (item) => {
         setSelectedItem(item);
         setDetailModalVisible(true);
     };
@@ -158,7 +166,7 @@ const WardrobeScreen = ({ navigation }) => {
         return (
             <ClothingCard 
                 item={item}
-                onCardLongPress={() => handleCardLongPress(item)}
+                onCardPress={() => handleCardPress(item)}
             />
         );
     };

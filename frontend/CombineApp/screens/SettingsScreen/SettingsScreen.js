@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Alert,
 } from 'react-native';
@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 // Menü Elemanı (ProfileScreen'deki ile aynı mantık)
 const SettingsMenuItem = ({ title, iconName, onPress }) => (
@@ -20,15 +21,20 @@ const SettingsMenuItem = ({ title, iconName, onPress }) => (
 );
 
 const SettingsScreen = ({ navigation }) => {
-  const { logout } = useAuth(); // Context'ten çıkış fonksiyonunu al
+  const { logout } = useAuth();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // --- ÇIKIŞ YAPMA MANTIĞI ---
   const handleLogout = () => {
-    // Kullanıcıya emin olup olmadığını soruyoruz
-    Alert.alert("Çıkış Yap", "Çıkış yapmak istediğinize emin misiniz?", [
-      { text: "İptal", style: "cancel" },
-      { text: "Çıkış Yap", onPress: () => logout(), style: "destructive" }, // Kırmızı buton
-    ]);
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
+    logout();
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   return (
@@ -37,6 +43,9 @@ const SettingsScreen = ({ navigation }) => {
         <View>
           {/* --- DÜZENLEME MENÜLERİ --- */}
           <View style={styles.menuContainer}>
+            <TouchableOpacity onPress={() => navigation.navigate('ErrorTest')}>
+  <Text>Test Error System</Text>
+</TouchableOpacity>
             <SettingsMenuItem
               title="Profili Düzenle"
               iconName="person-outline"
@@ -63,6 +72,17 @@ const SettingsScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
+
+        <ConfirmationModal
+          visible={showLogoutModal}
+          title="Logout"
+          message="Are you sure you want to logout?"
+          confirmText="Logout"
+          cancelText="Cancel"
+          type="danger"
+          onConfirm={confirmLogout}
+          onCancel={cancelLogout}
+        />
       </SafeAreaView>
     </LinearGradient>
   );

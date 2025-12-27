@@ -1,5 +1,6 @@
 import apiClient from "./client";
-import { Buffer } from "buffer"; // Import Buffer for base64 conversion
+import { Buffer } from "buffer";
+import { errorHandler } from '../utils';
 
 /**
  * Uploads an image to the backend to remove its background.
@@ -40,14 +41,11 @@ export const uploadImageForBgRemoval = async (imageUri) => {
 
     return { success: true, imageUrl };
   } catch (error) {
-    console.error(
-      "Error removing background:",
-      error.response ? error.response.data : error.message,
-    );
-    const message =
-      error.response?.data?.message ||
-      "Arka plan temizlenirken bir hata oluştu.";
-    return { success: false, message };
+    const standardError = errorHandler.handleApiError(error, { operation: 'removeBg', imageUri });
+    return { 
+      success: false, 
+      error: standardError
+    };
   }
 };
 
@@ -140,22 +138,18 @@ export const saveClothingItem = async (clothingData) => {
 
   // 2. Diğer verileri AI sonucundan ve formdan alıp ekle
   formData.append('name', name);
-  formData.append('color', color1);
+  
+  const anaRenk = aiResult?.kiyafet_analizi?.renk_paleti?.ana_renk;
+  formData.append('color', anaRenk || color1?.label || color1);
 
-  // AI verilerini işle (nested olabilir)
   if (aiResult && aiResult.kiyafet_analizi) {
     const analysis = aiResult.kiyafet_analizi;
     if (analysis.genel_bilgi) {
       formData.append('category', analysis.genel_bilgi.kategori || 'General');
       formData.append('subCategory', analysis.genel_bilgi.tur || 'General');
+      formData.append('season', analysis.genel_bilgi.mevsim || 'All-Season');
     }
-    if(analysis.stil_kullanimi && analysis.stil_kullanimi.tarz && analysis.stil_kullanimi.tarz.length > 0){
-      // Sezon bilgisi için 'tarz' dizisinden bir değer almayı deneyelim
-      formData.append('season', analysis.stil_kullanimi.tarz[0]);
-    } else {
-      formData.append('season', 'All-Season'); // Güvenli bir varsayılan
-    }
-     if (analysis.tasarim_detaylari) {
+    if (analysis.tasarim_detaylari) {
       formData.append('size', analysis.tasarim_detaylari.kesim || 'One Size');
     }
     if (analysis.malzeme_tahmini) {
@@ -177,13 +171,11 @@ export const saveClothingItem = async (clothingData) => {
     console.log('Clothing item saved successfully:', response.data);  
     return { success: true, data: response.data };
   } catch (error) {
-    console.error(
-      'Error saving clothing item:',
-      error.response ? error.response.data : error.message
-    );
-    const message =
-      error.response?.data?.message || 'Kıyafet kaydedilirken bir hata oluştu.';
-    return { success: false, message };
+    const standardError = errorHandler.handleApiError(error, { operation: 'saveClothing', fileName: formData.get('name') });
+    return { 
+      success: false, 
+      error: standardError
+    };
   }
 };
 
@@ -201,10 +193,10 @@ export const updateClothingItem = async (updatedItem) => {
     });
     return { success: true, data: response.data };
   } catch (error) {
-    console.error('Error updating item:', error.response?.data || error.message);
+    const standardError = errorHandler.handleApiError(error, { operation: 'updateClothing', itemId: updatedItem._id || updatedItem.id });
     return { 
       success: false, 
-      message: error.response?.data?.error?.message || 'Güncelleme yapılamadı.' 
+      error: standardError
     };
   }
 };
@@ -214,10 +206,10 @@ export const deleteClothingItem = async (itemId) => {
     const response = await apiClient.delete(`/clothes/delete/${itemId}`);
     return { success: true, data: response.data };
   } catch (error) {
-    console.error('Error deleting item:', error.response?.data || error.message);
+    const standardError = errorHandler.handleApiError(error, { operation: 'deleteClothing', itemId });
     return { 
       success: false, 
-      message: error.response?.data?.error?.message || 'Kıyafet silinirken bir hata oluştu.' 
+      error: standardError
     };
   }
 };
@@ -227,7 +219,11 @@ export const getClothingItems = async () => {
     const response = await apiClient.get('/clothes/list');
     return response.data;
   } catch (error) {
-    console.error("Error fetching clothes:", error);
-    return { success: false, data: [] };
+    const standardError = errorHandler.handleApiError(error, { operation: 'getClothingList' });
+    return { 
+      success: false, 
+      data: [],
+      error: standardError
+    };
   }
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect} from "react";
 import {
   View,
   Text,
@@ -16,6 +16,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../colors";
 import * as clothingApi from "../../api/clothing";
+import * as outfitsApi from "../../api/outfits";
+import { useError } from "../../context/ErrorContext";
+import { errorHandler } from "../../utils";
 
 // --- GRID CALCULATIONS ---
 const { width } = Dimensions.get("window");
@@ -27,6 +30,7 @@ const ITEM_SIZE =
   (width - PADDING * 2 - SPACING * (COLUMN_COUNT - 1)) / COLUMN_COUNT;
 
 const CreateOutfitScreen = ({ navigation }) => {
+  const { showError } = useError();
   const [outfitName, setOutfitName] = useState("");
   const [clothes, setClothes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,43 +53,61 @@ const CreateOutfitScreen = ({ navigation }) => {
   }, []);
 
   const toggleSelection = (item) => {
-    if (selectedItems.find((i) => i.id === item.id)) {
-      setSelectedItems((prev) => prev.filter((i) => i.id !== item.id));
+    const itemId = item._id || item.id;
+    if (selectedItems.find((i) => (i._id || i.id) === itemId)) {
+      setSelectedItems((prev) => prev.filter((i) => (i._id || i.id) !== itemId));
     } else {
       setSelectedItems((prev) => [...prev, item]);
     }
   };
 
-  const handleSaveOutfit = () => {
+  const handleSaveOutfit = async () => {
     if (!outfitName.trim()) {
-      Alert.alert("Missing Info", "Please name your outfit.");
+      showError({
+        title: 'Validation Error',
+        message: 'Please name your outfit',
+        category: 'VALIDATION'
+      });
       return;
     }
     if (selectedItems.length === 0) {
-      Alert.alert("Empty", "Select at least one item.");
+      showError({
+        title: 'Validation Error',
+        message: 'Select at least one item',
+        category: 'VALIDATION'
+      });
       return;
     }
 
-    const newOutfit = {
-      id: Math.random().toString(),
-      name: outfitName,
-      date: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }),
-      items: selectedItems.length,
-      outfitItems: selectedItems, // <--- ADD THIS LINE!
-    };
-
-    // Navigate back to the specific tab and screen
-    navigation.navigate("MainTabs", {
-      screen: "Outfits",
-      params: { newOutfit: newOutfit },
-    });
+    setLoading(true);
+    try {
+      // Extract only the IDs from selected items
+      const itemIds = selectedItems.map(item => item._id || item.id);
+      
+      const response = await outfitsApi.createOutfit(outfitName, itemIds);
+      
+      if (response.success) {
+        // Navigate back to Outfits screen
+        navigation.navigate("MainTabs", {
+          screen: "Outfits",
+        });
+      } else {
+        showError(errorHandler.formatErrorForUser(response.error));
+      }
+    } catch (error) {
+      showError({
+        title: 'Error',
+        message: 'Failed to create outfit',
+        category: 'SERVER'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderGridItem = ({ item }) => {
-    const isSelected = selectedItems.find((i) => i.id === item.id);
+    const itemId = item._id || item.id;
+    const isSelected = selectedItems.find((i) => (i._id || i.id) === itemId);
 
     return (
       <TouchableOpacity
@@ -93,16 +115,21 @@ const CreateOutfitScreen = ({ navigation }) => {
         style={[styles.gridItem, isSelected && styles.gridItemSelected]}
         onPress={() => toggleSelection(item)}
       >
-        {/* Fallback Icon if image fails or is a placeholder */}
-        {item.imageUrl && !item.imageUrl.includes("placeholder") ? (
-          <Image source={{ uri: item.imageUrl }} style={styles.gridImage} />
-        ) : (
-          <Ionicons
-            name="shirt-outline"
-            size={30}
-            color={COLORS.secondaryText}
-          />
-        )}
+        <View style={styles.imageContainer}>
+          {item.imageUrl && !item.imageUrl.includes("placeholder") ? (
+            <Image source={{ uri: item.imageUrl }} style={styles.gridImage} />
+          ) : (
+            <Ionicons
+              name="shirt-outline"
+              size={40}
+              color={COLORS.secondaryText}
+            />
+          )}
+        </View>
+
+        <Text style={styles.itemName} numberOfLines={1}>
+          {item.name || "Unnamed"}
+        </Text>
 
         {isSelected && (
           <View style={styles.checkIcon}>
@@ -138,7 +165,7 @@ const CreateOutfitScreen = ({ navigation }) => {
             <Text style={styles.label}>Selected ({selectedItems.length})</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {selectedItems.map((item) => (
-                <View key={item.id} style={styles.previewBox}>
+                <View key={item._id || item.id} style={styles.previewBox}>
                   <Ionicons
                     name="shirt"
                     size={20}
@@ -160,7 +187,7 @@ const CreateOutfitScreen = ({ navigation }) => {
           <FlatList
             data={clothes}
             renderItem={renderGridItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item._id || item.id}
             numColumns={COLUMN_COUNT}
             // This aligns the columns properly
             columnWrapperStyle={{ gap: SPACING }}
@@ -220,22 +247,37 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   gridItem: {
-    width: ITEM_SIZE, // STRICT WIDTH
-    height: ITEM_SIZE, // STRICT HEIGHT (Square)
+    width: ITEM_SIZE,
+    height: ITEM_SIZE + 25, // Extra space for name
     backgroundColor: COLORS.card,
     borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 8,
     marginBottom: SPACING,
     borderWidth: 2,
     borderColor: "transparent",
-    // NO flex: 1 here!
   },
   gridItemSelected: {
     borderColor: COLORS.primary,
     backgroundColor: "rgba(177, 59, 255, 0.1)",
   },
-  gridImage: { width: "80%", height: "80%", resizeMode: "contain" },
+  imageContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  gridImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+    borderRadius: 8,
+  },
+  itemName: {
+    fontSize: 11,
+    color: COLORS.textPrimary,
+    textAlign: "center",
+    fontWeight: "500",
+  },
   checkIcon: { position: "absolute", top: 5, right: 5 },
 
   footer: {

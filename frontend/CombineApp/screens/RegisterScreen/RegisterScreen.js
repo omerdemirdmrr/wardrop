@@ -13,19 +13,21 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../colors";
-import apiClient from "../../api/client"; // API istekleri için
+import apiClient from "../../api/client";
 import { FeOffset } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
+import { useError } from "../../context/ErrorContext";
+import { errorHandler } from "../../utils";
 
 const RegisterScreen = ({ navigation }) => {
-    // --- FORM STATE'LERİ ---
+    const { showError } = useError();
     const [username, setUsername] = useState("");
     const [usernameFocused, setUsernameFocused] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [loading, setLoading] = useState(false); // İşlem sırasında butonu kilitlemek için
-    const [passwordFocused, setPasswordFocused] = useState(false); // şifre alanı focus kontrolü
+    const [loading, setLoading] = useState(false);
+    const [passwordFocused, setPasswordFocused] = useState(false);
 
     // Basit e-posta doğrulama
     const validateEmail = (email) => {
@@ -83,63 +85,67 @@ const RegisterScreen = ({ navigation }) => {
         // Normalize edilmiş e-posta
         const normalizedEmail = email.trim().toLowerCase();
 
-        // Kullanıcı adı kontrolü
         if (!validateUsername(username)) {
-            Alert.alert(
-                "Invalid Username",
-                "Username must be 3-20 characters; may contain letters, numbers, . _ -. Cannot start/end or contain consecutive . _ -, and cannot be all digits."
-            );
+            showError({
+                title: 'Validation Error',
+                message: 'Username must be 3-20 characters; may contain letters, numbers, . _ -',
+                category: 'VALIDATION'
+            });
             return;
         }
 
-        // E-posta geçerli mi kontrol et
         if (!validateEmail(normalizedEmail)) {
-            Alert.alert("Invalid Email", "Please enter a valid email address.");
+            showError({
+                title: 'Validation Error',
+                message: 'Please enter a valid email address',
+                category: 'VALIDATION'
+            });
             return;
         }
 
         if (!validatePassword(password)) {
-            Alert.alert(
-                "Weak Password",
-                "Password must be at least 6 characters long and include at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character."
-            );
+            showError({
+                title: 'Validation Error',
+                message: 'Password must be at least 6 characters with uppercase, lowercase, digit, and special character',
+                category: 'VALIDATION'
+            });
             return;
         }
 
-        // 1. Şifreler eşleşiyor mu kontrolü
         if (password !== confirmPassword) {
-            Alert.alert("Error", "Passwords do not match!");
+            showError({
+                title: 'Validation Error',
+                message: 'Passwords do not match',
+                category: 'VALIDATION'
+            });
             return;
         }
 
-        // 2. Boş alan kontrolü
         if (!username || !normalizedEmail || !password) {
-            Alert.alert("Missing Information", "Please fill in all fields.");
+            showError({
+                title: 'Validation Error',
+                message: 'Please fill in all fields',
+                category: 'VALIDATION'
+            });
             return;
         }
 
-        setLoading(true); // Yükleniyor başlat
+        setLoading(true);
         try {
-            // 3. Backend'e kayıt isteği gönder (normalize edilmiş e-posta gönderiliyor)
             const response = await apiClient.post("/users/signup", {
                 username: username.trim(),
                 email: normalizedEmail,
                 password,
             });
 
-            // 4. Başarılı ise Login ekranına yönlendir
             if (response.data) {
-                Alert.alert("Registration Successful!", "Please log in.");
                 navigation.navigate("Login");
             }
         } catch (error) {
-            // Hata mesajını yakala ve kullanıcıya göster
-            const errorMessage =
-                error.response?.data?.message ||
-                "An unexpected error occurred.";
-            Alert.alert("Registration Failed", errorMessage);
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
         } finally {
-            setLoading(false); // Yükleniyor bitir
+            setLoading(false);
         }
     };
 
@@ -168,72 +174,75 @@ const RegisterScreen = ({ navigation }) => {
 
                         {/* Kullanıcı adı kuralları - sadece kullanıcı adı alanı focus olduğunda görünür */}
                         {usernameFocused && (
-                            <View style={styles.passwordRequirements}>
+                            <View style={styles.requirementsContainer}>
                                 <Text style={styles.requirementsTitle}>
-                                    Username Rules:
+                                    Username Requirements
                                 </Text>
+                                
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, isUsernameLengthValid && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={isUsernameLengthValid ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={isUsernameLengthValid ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, isUsernameLengthValid && styles.requirementLabelValid]}>
+                                        3-20 characters
+                                    </Text>
+                                </View>
 
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        isUsernameLengthValid
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {isUsernameLengthValid ? "✓ " : "• "}
-                                    Length: 3–20 characters
-                                </Text>
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, isUsernameAllowedChars && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={isUsernameAllowedChars ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={isUsernameAllowedChars ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, isUsernameAllowedChars && styles.requirementLabelValid]}>
+                                        Only letters, numbers, . _ -
+                                    </Text>
+                                </View>
 
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        isUsernameAllowedChars
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {isUsernameAllowedChars ? "✓ " : "• "}Only
-                                    letters, numbers, . _ -
-                                </Text>
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, isUsernameNoEdgeSpecial && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={isUsernameNoEdgeSpecial ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={isUsernameNoEdgeSpecial ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, isUsernameNoEdgeSpecial && styles.requirementLabelValid]}>
+                                        No . _ - at start/end
+                                    </Text>
+                                </View>
 
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        isUsernameNoEdgeSpecial
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {isUsernameNoEdgeSpecial ? "✓ " : "• "}
-                                    Cannot start/end with . _ -
-                                </Text>
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, isUsernameNoConsecutiveSpecial && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={isUsernameNoConsecutiveSpecial ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={isUsernameNoConsecutiveSpecial ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, isUsernameNoConsecutiveSpecial && styles.requirementLabelValid]}>
+                                        No consecutive . _ -
+                                    </Text>
+                                </View>
 
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        isUsernameNoConsecutiveSpecial
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {isUsernameNoConsecutiveSpecial
-                                        ? "✓ "
-                                        : "• "}
-                                    Cannot have consecutive . _ -
-                                </Text>
-
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        isUsernameNotAllDigits
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {isUsernameNotAllDigits ? "✓ " : "• "}Cannot
-                                    be all digits
-                                </Text>
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, isUsernameNotAllDigits && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={isUsernameNotAllDigits ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={isUsernameNotAllDigits ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, isUsernameNotAllDigits && styles.requirementLabelValid]}>
+                                        Cannot be all numbers
+                                    </Text>
+                                </View>
                             </View>
                         )}
 
@@ -268,6 +277,80 @@ const RegisterScreen = ({ navigation }) => {
                             )}
                         </View>
 
+                        {/* Şifre kuralları - password field'dan hemen sonra */}
+                        {passwordFocused && (
+                            <View style={styles.requirementsContainer}>
+                                <Text style={styles.requirementsTitle}>
+                                    Password Requirements
+                                </Text>
+                                
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, isLengthValid && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={isLengthValid ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={isLengthValid ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, isLengthValid && styles.requirementLabelValid]}>
+                                        At least 6 characters
+                                    </Text>
+                                </View>
+
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, hasUpper && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={hasUpper ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={hasUpper ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, hasUpper && styles.requirementLabelValid]}>
+                                        One uppercase letter
+                                    </Text>
+                                </View>
+
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, hasLower && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={hasLower ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={hasLower ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, hasLower && styles.requirementLabelValid]}>
+                                        One lowercase letter
+                                    </Text>
+                                </View>
+
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, hasDigit && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={hasDigit ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={hasDigit ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, hasDigit && styles.requirementLabelValid]}>
+                                        One digit
+                                    </Text>
+                                </View>
+
+                                <View style={styles.requirementRow}>
+                                    <View style={[styles.requirementIcon, hasSpecial && styles.requirementIconValid]}>
+                                        <Ionicons 
+                                            name={hasSpecial ? "checkmark" : "close"} 
+                                            size={14} 
+                                            color={hasSpecial ? COLORS.primary : "#FF6B6B"} 
+                                        />
+                                    </View>
+                                    <Text style={[styles.requirementLabel, hasSpecial && styles.requirementLabelValid]}>
+                                        One special character
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+
                         <View style={styles.inputWrapper}>
                         <TextInput
                             style={styles.input}
@@ -275,8 +358,6 @@ const RegisterScreen = ({ navigation }) => {
                             placeholderTextColor={COLORS.gray}
                             value={confirmPassword}
                             onChangeText={setConfirmPassword}
-                            onFocus={() => setPasswordFocused(true)}
-                            onBlur={() => setPasswordFocused(false)}
                             secureTextEntry
                         />
                          {isMatch && (
@@ -288,69 +369,6 @@ const RegisterScreen = ({ navigation }) => {
                                 />
                             )}
                         </View>
-
-                        {/* Şifre kuralları - sadece şifre alanı focus olduğunda görünür */}
-                        {passwordFocused && (
-                            <View style={styles.passwordRequirements}>
-                                <Text style={styles.requirementsTitle}>
-                                    Password Rules:
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        isLengthValid
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {isLengthValid ? "✓ " : "• "}At least 6
-                                    characters
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        hasUpper
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {hasUpper ? "✓ " : "• "}At least 1 uppercase
-                                    letter
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        hasLower
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {hasLower ? "✓ " : "• "}At least 1 lowercase
-                                    letter
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        hasDigit
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {hasDigit ? "✓ " : "• "}At least 1 digit
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.requirementText,
-                                        hasSpecial
-                                            ? styles.valid
-                                            : styles.invalid,
-                                    ]}
-                                >
-                                    {hasSpecial ? "✓ " : "• "}At least 1 special
-                                    character
-                                </Text>
-                            </View>
-                        )}
 
                         {/* Kayıt Ol butonu */}
                         <TouchableOpacity
@@ -468,6 +486,44 @@ const styles = StyleSheet.create({
         position: 'absolute',
         right: 15,
         top: 13,
+    },
+    // Modern requirement styles
+    requirementsContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(177, 59, 255, 0.2)',
+    },
+    requirementRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    requirementIcon: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255, 107, 107, 0.15)',
+        borderWidth: 1.5,
+        borderColor: '#FF6B6B',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    requirementIconValid: {
+        backgroundColor: 'rgba(177, 59, 255, 0.15)',
+        borderColor: COLORS.primary,
+    },
+    requirementLabel: {
+        fontSize: 13,
+        color: '#999',
+        flex: 1,
+    },
+    requirementLabelValid: {
+        color: COLORS.textPrimary,
+        fontWeight: '500',
     },
 });
 

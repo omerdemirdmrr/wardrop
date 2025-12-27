@@ -49,7 +49,8 @@ router.post("/add", verifyToken, async (req, res) => {
             userId: req.user.id,
             name,
             items, // Örn: ["ID_TSHIRT", "ID_PANTOLON"]
-            description
+            description,
+            status: 'custom' // Mark user-created outfits as custom
         });
 
         const savedOutfit = await newOutfit.save();

@@ -2,13 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from 'react-native';
 import { COLORS } from '../screens/colors';
 
-const ClothingCard = ({ item, onCardLongPress }) => {
+const ClothingCard = ({ item, onCardPress }) => {
     // isExpanded state ve ilgili mantık kaldırıldı.
 
     return (
         <TouchableOpacity 
             style={styles.card} 
-            onLongPress={onCardLongPress} // onPress, onLongPress olarak değiştirildi ve prop'tan gelen fonksiyon kullanıldı
+            onPress={onCardPress}
             activeOpacity={0.9}
         >
             <ImageBackground

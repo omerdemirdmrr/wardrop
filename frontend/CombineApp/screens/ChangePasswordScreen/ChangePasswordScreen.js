@@ -16,9 +16,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../colors";
 import apiClient from "../../api/client";
 import { Ionicons } from "@expo/vector-icons";
+import { useError } from "../../context/ErrorContext";
+import { errorHandler } from "../../utils";
 
 const ChangePasswordScreen = ({ navigation }) => {
-    // --- FORM STATE'LERİ ---
+    const { showError } = useError();
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -65,22 +67,31 @@ const ChangePasswordScreen = ({ navigation }) => {
     const handleChangePassword = async () => {
         // 1. Yeni şifre kurallara uyuyor mu?
         if (!validatePassword(newPassword)) {
-            Alert.alert(
-                "Weak Password",
-                "Password must be at least 6 characters long and include at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character."
-            );
+            showError({
+                title: 'Validation Error',
+                message: 'Password must be at least 6 characters with uppercase, lowercase, digit, and special character',
+                category: 'VALIDATION'
+            });
             return;
         }
 
         // 2. Şifreler eşleşiyor mu kontrolü
         if (newPassword !== confirmPassword) {
-            Alert.alert("Error", "Passwords do not match!");
+            showError({
+                title: 'Validation Error',
+                message: 'Passwords do not match',
+                category: 'VALIDATION'
+            });
             return;
         }
 
         // 3. Boş alan kontrolü
         if (!oldPassword || !newPassword || !confirmPassword) {
-            Alert.alert("Missing Information", "Please fill in all fields.");
+            showError({
+                title: 'Validation Error',
+                message: 'Please fill in all fields',
+                category: 'VALIDATION'
+            });
             return;
         }
         
@@ -108,14 +119,11 @@ const ChangePasswordScreen = ({ navigation }) => {
             });
 
             if (response.data) {
-                Alert.alert("Success", "Password changed successfully!");
                 navigation.goBack();
             }
         } catch (error) {
-            const errorMessage =
-                error.response?.data?.message ||
-                "An unexpected error occurred.";
-            Alert.alert("Operation Failed", errorMessage);
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
         } finally {
             setLoading(false);
         }

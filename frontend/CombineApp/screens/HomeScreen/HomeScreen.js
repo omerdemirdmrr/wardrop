@@ -15,7 +15,9 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useAuth } from "../../context/AuthContext";
 import { getWeatherByCoords } from "../../api/weather";
-import { generateOutfit, updateOutfitStatus } from "../../api/outfits"; // YENİ
+import { generateOutfit, updateOutfitStatus } from "../../api/outfits";
+import { useError } from "../../context/ErrorContext";
+import { errorHandler, ERROR_MESSAGES } from "../../utils";
 import ClothingCard from "../../components/ClothingCard";
 import ClothingDetailModal from "../../components/ClothingDetailModal";
 
@@ -50,8 +52,8 @@ const WeatherCard = ({ weather }) => {
 
 const HomeScreen = ({ navigation }) => {
     const { user } = useAuth();
+    const { showError } = useError();
 
-    // --- STATE TANIMLAMALARI ---
     const [weather, setWeather] = useState(null);
     const [outfit, setOutfit] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -83,15 +85,25 @@ const HomeScreen = ({ navigation }) => {
             setLoading(true);
             const response = await generateOutfit(params);
             console.log("generateOutfit response:", response);
+            
+            if (!response.success) {
+                showError(errorHandler.formatErrorForUser(response.error));
+                return;
+            }
+            
             if (response.data?.success) {
                 setOutfit(response.data.data);
             } else {
-                Alert.alert("Hata", "Yeni bir kombin oluşturulamadı. Lütfen gardırobunuzda yeterli sayıda kıyafet olduğundan emin olun.");
+                showError({
+                    title: 'Outfit Generation Failed',
+                    message: ERROR_MESSAGES.OUTFIT.NOT_ENOUGH_ITEMS,
+                    category: 'VALIDATION'
+                });
                 console.warn("Outfit generation failed:", response.data?.message);
             }
         } catch (error) {
-            console.error("Kombin getirme hatası:", error.message || error);
-            Alert.alert("Hata", "Kombin getirilirken bir sorun oluştu.");
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
         } finally {
             setLoading(false);
         }
@@ -123,12 +135,17 @@ const HomeScreen = ({ navigation }) => {
         if (!outfit || loading || processingAction) return;
         try {
             setProcessingAction(true);
-            await updateOutfitStatus(outfit._id, 'worn');
-            Alert.alert("Kaydedildi!", "Bu kombini giydiğini not aldık. Şimdi yeni bir tane gelsin!");
-            fetchOutfit(); // Yeni kombin getir
+            const response = await updateOutfitStatus(outfit._id, 'worn');
+            
+            if (!response.success) {
+                showError(errorHandler.formatErrorForUser(response.error));
+                return;
+            }
+            
+            fetchOutfit();
         } catch (error) {
-            console.error("Beğeni hatası:", error.message || error);
-            Alert.alert("Hata", "İşlem gerçekleştirilemedi.");
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
         } finally {
             setProcessingAction(false);
         }
@@ -140,13 +157,17 @@ const HomeScreen = ({ navigation }) => {
         try {
             setProcessingAction(true);
             const dislikedId = outfit._id;
-            await updateOutfitStatus(dislikedId, 'disliked');
-            Alert.alert("Not Edildi", "Bu tarz kombinleri daha az göstereceğiz. İşte yeni bir tane!");
-            // Pass the disliked ID to ensure the next generation excludes it and uses it as negative context
+            const response = await updateOutfitStatus(dislikedId, 'disliked');
+            
+            if (!response.success) {
+                showError(errorHandler.formatErrorForUser(response.error));
+                return;
+            }
+            
             fetchOutfit({ exclude: dislikedId, feedback: 'disliked' });
         } catch (error) {
-            console.error("Dislike hatası:", error.message || error);
-            Alert.alert("Hata", "İşlem gerçekleştirilemedi.");
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
         } finally {
             setProcessingAction(false);
         }

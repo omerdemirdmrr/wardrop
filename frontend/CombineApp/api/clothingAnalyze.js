@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { errorHandler } from '../utils';
 
-// API Key .env dosyasından okunuyor
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "AIzaSyC4lC2-OqayitW_ttRTBtFcQCNQYdjYzrg";
 
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -123,10 +123,10 @@ export const analyzeImageWithAI = async (imageUri) => {
     return { success: true, data: aiResponse };
 
   } catch (error) {
-    console.error("AI Analysis Failed:", error);
+    const standardError = errorHandler.handleAIError(error, { operation: 'analyzeImage', imageUri });
     return {
       success: false,
-      error: error.message || "An unexpected error occurred",
+      error: standardError,
       data: null
     };
   }

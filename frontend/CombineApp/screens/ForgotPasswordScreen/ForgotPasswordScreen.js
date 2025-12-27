@@ -16,19 +16,19 @@ import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../colors";
 import apiClient from "../../api/client";
 import { Ionicons } from "@expo/vector-icons";
+import { useError } from "../../context/ErrorContext";
+import { errorHandler } from "../../utils";
 
 const ForgotPasswordScreen = ({ navigation }) => {
-    // --- STEPS: 1=Email, 2=Code, 3=NewPassword ---
+    const { showError } = useError();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
-    // --- FORM DATA ---
     const [email, setEmail] = useState("");
     const [code, setCode] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
 
-    // --- VALIDATION UI STATES (Step 3) ---
     const [newPasswordFocused, setNewPasswordFocused] = useState(false);
 
     // --- VALIDATION LOGIC ---
@@ -51,7 +51,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
     // STEP 1: Send Code
     const handleSendCode = async () => {
         if (!email || !email.includes("@")) {
-            Alert.alert("Invalid Email", "Please enter a valid email address.");
+            showError({
+                title: 'Validation Error',
+                message: 'Please enter a valid email address',
+                category: 'VALIDATION'
+            });
             return;
         }
 
@@ -59,11 +63,10 @@ const ForgotPasswordScreen = ({ navigation }) => {
         try {
             // Backend endpoint: /auth/forgot-password
             await apiClient.post("/auth/forgot-password", { email });
-            Alert.alert("Success", "Verification code sent to your email. Please check your Inbox and Spam/Junk folder.");
             setStep(2);
         } catch (error) {
-            const msg = error.response?.data?.message || "Could not send code.";
-            Alert.alert("Error", msg);
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
         } finally {
             setLoading(false);
         }
@@ -72,7 +75,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
     // STEP 2: Verify Code
     const handleVerifyCode = async () => {
         if (!code || code.length < 6) {
-            Alert.alert("Invalid Code", "Please enter the 6-digit code.");
+            showError({
+                title: 'Validation Error',
+                message: 'Please enter the 6-digit code',
+                category: 'VALIDATION'
+            });
             return;
         }
 
@@ -80,11 +87,10 @@ const ForgotPasswordScreen = ({ navigation }) => {
         try {
             // Backend endpoint: /auth/verify-code
             await apiClient.post("/auth/verify-code", { email, code });
-            Alert.alert("Success", "Code verified.");
             setStep(3);
         } catch (error) {
-            const msg = error.response?.data?.message || "Invalid code.";
-            Alert.alert("Error", msg);
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
         } finally {
             setLoading(false);
         }
@@ -93,11 +99,19 @@ const ForgotPasswordScreen = ({ navigation }) => {
     // STEP 3: Reset Password
     const handleResetPassword = async () => {
         if (!validatePassword(newPassword)) {
-            Alert.alert("Weak Password", "Please follow the password rules.");
+            showError({
+                title: 'Validation Error',
+                message: 'Please follow the password rules',
+                category: 'VALIDATION'
+            });
             return;
         }
         if (!isMatch) {
-            Alert.alert("Error", "Passwords do not match.");
+            showError({
+                title: 'Validation Error',
+                message: 'Passwords do not match',
+                category: 'VALIDATION'
+            });
             return;
         }
 
@@ -110,11 +124,10 @@ const ForgotPasswordScreen = ({ navigation }) => {
                 newPassword
             });
             
-            Alert.alert("Success", "Password reset successfully! You can now log in.");
             navigation.navigate("Login");
         } catch (error) {
-            const msg = error.response?.data?.message || "Could not reset password.";
-            Alert.alert("Error", msg);
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
         } finally {
             setLoading(false);
         }

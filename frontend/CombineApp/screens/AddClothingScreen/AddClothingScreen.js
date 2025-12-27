@@ -19,10 +19,12 @@ import * as ImagePicker from 'expo-image-picker';
 // API ve Sabitler
 import { saveClothingItem } from '../../api/clothing';
 import { analyzeImageWithAI } from '../../api/clothingAnalyze';
-import { COLORS_OPTIONS } from '../../constants/options'; // Renk listesi
+import { COLORS_OPTIONS } from '../../constants/options';
+import { useError } from '../../context/ErrorContext';
+import { errorHandler } from '../../utils';
 
 const AddClothingScreen = ({ navigation }) => {
-  // --- STATE ---
+  const { showError } = useError();
   const [imageUri, setImageUri] = useState(null);
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -44,37 +46,44 @@ const AddClothingScreen = ({ navigation }) => {
     try {
       const response = await analyzeImageWithAI(uri);
 
-      if (response.success && response.data && response.data.kiyafet_analizi && response.data.kiyafet_analizi.success) {
-        const analysis = response.data.kiyafet_analizi;
-        setAiResult(response.data);
-
-        const anaRenk = analysis.renk_paleti?.ana_renk;
-        const ikincilRenk = analysis.renk_paleti?.ikincil_renk;
-        const kategori = analysis.genel_bilgi?.kategori;
-        const tur = analysis.genel_bilgi?.tur;
-        const mevsim = analysis.genel_bilgi?.mevsim || 'Tüm Mevsimler';
-
-        const foundColor1 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === anaRenk?.toLowerCase());
-        const foundColor2 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === ikincilRenk?.toLowerCase());
-
-        // EĞER LİSTEDE YOKSA, AI'DAN GELENİ KABUL ET
-        const finalColor1 = foundColor1 || (anaRenk ? { label: anaRenk, value: anaRenk } : null);
-        const finalColor2 = foundColor2 || (ikincilRenk ? { label: ikincilRenk, value: ikincilRenk } : null);
-
-        setColor1(finalColor1);
-        setColor2(finalColor2);
-
-        // İsim oluştururken ana renk kullanılıyor
-        const namePrefix = anaRenk ? `${anaRenk} ` : '';
-        setName(`${namePrefix}${tur}`);
-
-      } else {
-        const errorMessage = response.error || "Görüntü analiz edilemedi.";
-        Alert.alert("Hata", errorMessage);
+      if (!response.success) {
+        showError(errorHandler.formatErrorForUser(response.error));
+        return;
       }
+
+      if (!response.data?.kiyafet_analizi?.success) {
+        showError({
+          title: 'Not Clothing',
+          message: 'Please upload an image of clothing or accessories',
+          category: 'VALIDATION'
+        });
+        return;
+      }
+
+      const analysis = response.data.kiyafet_analizi;
+      setAiResult(response.data);
+
+      const anaRenk = analysis.renk_paleti?.ana_renk;
+      const ikincilRenk = analysis.renk_paleti?.ikincil_renk;
+      const kategori = analysis.genel_bilgi?.kategori;
+      const tur = analysis.genel_bilgi?.tur;
+      const mevsim = analysis.genel_bilgi?.mevsim || 'Tüm Mevsimler';
+
+      const foundColor1 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === anaRenk?.toLowerCase());
+      const foundColor2 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === ikincilRenk?.toLowerCase());
+
+      const finalColor1 = foundColor1 || (anaRenk ? { label: anaRenk, value: anaRenk } : null);
+      const finalColor2 = foundColor2 || (ikincilRenk ? { label: ikincilRenk, value: ikincilRenk } : null);
+
+      setColor1(finalColor1);
+      setColor2(finalColor2);
+
+      const namePrefix = anaRenk ? `${anaRenk} ` : '';
+      setName(`${namePrefix}${tur}`);
+
     } catch (error) {
-      console.error(error);
-      Alert.alert("Hata", "Analiz sırasında bir sorun oluştu.");
+      const standardError = errorHandler.handleApiError(error);
+      showError(errorHandler.formatErrorForUser(standardError));
     } finally {
       setAnalyzing(false);
     }
@@ -84,7 +93,11 @@ const AddClothingScreen = ({ navigation }) => {
     if (loading || analyzing) return;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('İzin Reddedildi', 'Galeriye erişim izni gerekiyor.');
+      showError({
+        title: 'Permission Required',
+        message: 'Gallery access permission is required',
+        category: 'PERMISSION'
+      });
       return;
     }
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -102,7 +115,11 @@ const AddClothingScreen = ({ navigation }) => {
     if (loading || analyzing) return;
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('İzin Reddedildi', 'Kamera izni gerekiyor.');
+      showError({
+        title: 'Permission Required',
+        message: 'Camera permission is required',
+        category: 'PERMISSION'
+      });
       return;
     }
     let result = await ImagePicker.launchCameraAsync({
@@ -119,11 +136,19 @@ const AddClothingScreen = ({ navigation }) => {
   // --- KAYDETME İŞLEMİ (Arka Plan Silme Dahil) ---
   const handleSave = async () => {
     if (!name) {
-      Alert.alert('Eksik Bilgi', 'Lütfen kıyafete bir isim verin.');
+      showError({
+        title: 'Validation Error',
+        message: 'Please provide a name for the clothing item',
+        category: 'VALIDATION'
+      });
       return;
     }
     if (!color1) {
-      Alert.alert('Eksik Bilgi', 'Lütfen en az bir ana renk seçin.');
+      showError({
+        title: 'Validation Error',
+        message: 'Please select at least one color',
+        category: 'VALIDATION'
+      });
       return;
     }
 
@@ -141,16 +166,17 @@ const AddClothingScreen = ({ navigation }) => {
 
       console.log("Saving JSON:", finalJson);
 
-      // Kaydet
       const saveResponse = await saveClothingItem(finalJson);
-      if (!saveResponse.success) throw new Error('Veritabanına kayıt başarısız.');
-
-      Alert.alert('Harika!', 'Kıyafet gardırobuna eklendi.', [
-        { text: 'Tamam', onPress: () => navigation.goBack() },
-      ]);
+      
+      if (saveResponse.success) {
+        navigation.goBack();
+      } else {
+        showError(errorHandler.formatErrorForUser(saveResponse.error));
+      }
 
     } catch (error) {
-      Alert.alert('Hata', error.message || 'Beklenmedik bir hata oluştu.');
+      const standardError = errorHandler.handleApiError(error);
+      showError(errorHandler.formatErrorForUser(standardError));
     } finally {
       setLoading(false);
     }

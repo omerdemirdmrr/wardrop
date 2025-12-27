@@ -16,9 +16,12 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../context/AuthContext";
 
 import apiClient from "../../api/client";
+import { useError } from "../../context/ErrorContext";
+import { errorHandler } from "../../utils";
 
 const EditProfileScreen = ({ navigation }) => {
     const { user, updateUser } = useAuth();
+    const { showError } = useError();
 
     const [name, setName] = useState(user?.name || "");
     const [imageUri, setImageUri] = useState(user?.profileImageUrl || "");
@@ -37,14 +40,11 @@ const EditProfileScreen = ({ navigation }) => {
 
             if (response.data && response.data.user) {
                 updateUser(response.data.user);
-                Alert.alert("Success", "Your profile has been updated.", [
-                    { text: "OK", onPress: () => navigation.goBack() },
-                ]);
+                navigation.goBack();
             }
         } catch (error) {
-            const errorMessage =
-                error.response?.data?.message || "Failed to update profile.";
-            Alert.alert("Error", errorMessage);
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
         } finally {
             setLoading(false);
         }
@@ -54,10 +54,11 @@ const EditProfileScreen = ({ navigation }) => {
         const { status } =
             await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== "granted") {
-            Alert.alert(
-                "Permission Denied",
-                "Gallery access permission is required."
-            );
+            showError({
+                title: 'Permission Required',
+                message: 'Gallery access permission is required',
+                category: 'PERMISSION'
+            });
             return;
         }
 

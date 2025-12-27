@@ -19,15 +19,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { COLORS } from "../../colors";
 
-import { getUserOutfits, deleteOutfit, clearDislikedOutfits } from "../../api/outfits"; // Import API function
-import { useAuth } from "../../context/AuthContext"; // Import Auth Context
+import { getUserOutfits, deleteOutfit, clearDislikedOutfits } from "../../api/outfits";
+import { useAuth } from "../../context/AuthContext";
+import { useError } from "../../context/ErrorContext";
+import { errorHandler } from "../../utils";
 
 const OutfitScreen = ({ navigation, route }) => {
   const { user } = useAuth();
+  const { showError } = useError();
   const [activeTab, setActiveTab] = useState("favorites");
   const [customOutfits, setCustomOutfits] = useState([]);
   const [favoriteOutfits, setFavoriteOutfits] = useState([]);
-  const [dislikedOutfits, setDislikedOutfits] = useState([]); // New state
+  const [dislikedOutfits, setDislikedOutfits] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
 
@@ -38,17 +41,26 @@ const OutfitScreen = ({ navigation, route }) => {
 
   // --- FETCH OUTFITS ---
   const fetchOutfits = useCallback(async () => {
-    // Ensure we have a valid logged-in user with an ID
-    if (!user?._id) return;
+    // Check for both _id and id
+    if (!user?._id && !user?.id) {
+        return;
+    }
+    
     try {
         setLoading(true);
         const response = await getUserOutfits();
-        if (response.data && response.data.success) {
+        
+        if (!response.success) {
+            showError(errorHandler.formatErrorForUser(response.error));
+            return;
+        }
+        
+        if (response.data && response.data.data) {
             const allOutfits = response.data.data;
             
-            // Filter and map outfits
             const favs = allOutfits.filter(o => o.status === 'worn' || o.status === 'favorite').map(mapOutfitData);
-            const customs = allOutfits.filter(o => o.status === 'created' || o.status === 'custom').map(mapOutfitData);
+            // Include outfits with no status (user-created), 'created', or 'custom'
+            const customs = allOutfits.filter(o => !o.status || o.status === 'created' || o.status === 'custom').map(mapOutfitData);
             const disliked = allOutfits.filter(o => o.status === 'disliked').map(mapOutfitData);
             
             setFavoriteOutfits(favs);
@@ -56,11 +68,12 @@ const OutfitScreen = ({ navigation, route }) => {
             setDislikedOutfits(disliked); 
         }
     } catch (error) {
-        console.error("Error fetching outfits:", error);
+        const standardError = errorHandler.handleApiError(error);
+        showError(errorHandler.formatErrorForUser(standardError));
     } finally {
         setLoading(false);
     }
-  }, [user?._id]);
+  }, [user?._id, user?.id]);
 
   const mapOutfitData = (outfit) => {
       return {
@@ -126,24 +139,29 @@ const OutfitScreen = ({ navigation, route }) => {
 
   const handleDeleteOutfit = (item) => {
       Alert.alert(
-          "Kombini Sil",
-          "Bu kombini silmek istediğinize emin misiniz?",
+          "Delete Outfit",
+          "Are you sure you want to delete this outfit?",
           [
-              { text: "Vazgeç", style: "cancel" },
+              { text: "Cancel", style: "cancel" },
               { 
-                  text: "Sil", 
+                  text: "Delete", 
                   style: "destructive", 
                   onPress: async () => {
                       try {
-                          await deleteOutfit(item.id);
-                          // Update local state immediately
+                          const res = await deleteOutfit(item.id);
+                          
+                          if (!res.success) {
+                              showError(errorHandler.formatErrorForUser(res.error));
+                              return;
+                          }
+                          
                           const filterFunc = (o) => o.id !== item.id;
                           setFavoriteOutfits(prev => prev.filter(filterFunc));
                           setCustomOutfits(prev => prev.filter(filterFunc));
                           setDislikedOutfits(prev => prev.filter(filterFunc));
                       } catch (error) {
-                          Alert.alert("Hata", "Silme işlemi başarısız oldu.");
-                          console.error("Delete error:", error);
+                          const standardError = errorHandler.handleApiError(error);
+                          showError(errorHandler.formatErrorForUser(standardError));
                       }
                   }
               }
@@ -153,20 +171,26 @@ const OutfitScreen = ({ navigation, route }) => {
 
   const handleClearAllDisliked = () => {
     Alert.alert(
-        "Tümünü Sil",
-        "Beğenmediğiniz tüm kombin kayıtlarını silmek ve sıfırlamak istiyor musunuz?",
+        "Clear All",
+        "Are you sure want to delete all disliked outfit records and reset?",
         [
-            { text: "Vazgeç", style: "cancel" },
+            { text: "Cancel", style: "cancel" },
             { 
-                text: "Sıfırla", 
+                text: "Reset", 
                 style: "destructive", 
                 onPress: async () => {
                     try {
-                        await clearDislikedOutfits();
+                        const res = await clearDislikedOutfits();
+                        
+                        if (!res.success) {
+                            showError(errorHandler.formatErrorForUser(res.error));
+                            return;
+                        }
+                        
                         setDislikedOutfits([]);
-                        Alert.alert("Başarılı", "Liste temizlendi.");
                     } catch (error) {
-                        Alert.alert("Hata", "Temizleme işlemi başarısız oldu.");
+                        const standardError = errorHandler.handleApiError(error);
+                        showError(errorHandler.formatErrorForUser(standardError));
                     }
                 }
             }

@@ -19,7 +19,7 @@ const schema = mongoose.Schema({
     isFavorite: { type: Boolean, default: false },
     status: {
         type: String,
-        enum: ['suggested', 'worn', 'disliked'],
+        enum: ['suggested', 'worn', 'disliked', 'custom', 'created'],
         default: 'suggested'
     }
 }, {

@@ -17,51 +17,50 @@ import { LinearGradient } from 'expo-linear-gradient';
 import SelectionModal from './SelectionModal';
 import { COLORS_OPTIONS } from '../constants/options';
 import { updateClothingItem, deleteClothingItem } from '../api/clothing';
+import { useError } from '../context/ErrorContext';
+import { errorHandler } from '../utils';
 
 const ClothingDetailModal = ({ visible, item, onClose, onUpdateTrigger }) => {
-  // --- STATE ---
-  const [isEditing, setIsEditing] = useState(false); // Düzenleme modu açık mı?
+  const { showError } = useError();
+  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Düzenlenebilir Veriler
   const [name, setName] = useState('');
   const [color1, setColor1] = useState(null);
-  const [color2, setColor2] = useState(null);
 
   // Renk Seçim Modalı
   const [selectionModalVisible, setSelectionModalVisible] = useState(false);
-  const [activeSelection, setActiveSelection] = useState(null); // 'color1' | 'color2'
 
   // Modal her açıldığında verileri item'dan alıp state'e yükle
   useEffect(() => {
     if (item) {
       setName(item.name || '');
-      // Renk string değerlerini (örn: 'red') obje olarak bul ({label:'Red', value:'red'})
-      setColor1(COLORS_OPTIONS.find(c => c.value === item.color1) || COLORS_OPTIONS.find(c => c.value === item.color) || null);
-      setColor2(COLORS_OPTIONS.find(c => c.value === item.color2) || null);
-      setIsEditing(false); // Her açılışta görüntüleme moduyla başla
+      setColor1(COLORS_OPTIONS.find(c => c.label === item.color) || (item.color ? { label: item.color, value: item.color } : null));
+      setIsEditing(false);
     }
   }, [item, visible]);
 
   if (!item) return null;
 
-  // --- SİLME İŞLEMİ ---
   const handleDelete = () => {
     Alert.alert(
-      "Kıyafeti Sil", 
-      "Bu parçayı gardırobundan silmek istediğine emin misin?",
+      "Delete Clothing", 
+      "Are you sure you want to remove this item from your wardrobe?",
       [
-        { text: "İptal", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         { 
-          text: "Sil", 
+          text: "Delete", 
           style: "destructive", 
           onPress: async () => {
             setLoading(true);
             const res = await deleteClothingItem(item._id || item.id);
             setLoading(false);
             if (res.success) {
-               onUpdateTrigger(); // Listeyi yenilemesi için ana sayfaya haber ver
-               onClose(); // Modalı kapat
+               onUpdateTrigger();
+               onClose();
+            } else {
+               showError(errorHandler.formatErrorForUser(res.error));
             }
           }
         }
@@ -76,31 +75,26 @@ const ClothingDetailModal = ({ visible, item, onClose, onUpdateTrigger }) => {
       ...item,
       name: name,
       color1: color1 ? color1.value : null,
-      color2: color2 ? color2.value : null,
     };
 
     const res = await updateClothingItem(updatedData);
     setLoading(false);
 
     if (res.success) {
-      setIsEditing(false); // Düzenleme modundan çık
-      onUpdateTrigger(); // Ana sayfayı yenile
-      Alert.alert("Başarılı", "Düzenlemeler kaydedildi.");
+      setIsEditing(false);
+      onUpdateTrigger();
     } else {
-      Alert.alert("Hata", "Güncelleme yapılamadı.");
+      showError(errorHandler.formatErrorForUser(res.error));
     }
   };
 
-  // --- RENK SEÇİMİ ---
-  const openSelection = (type) => {
-    if (!isEditing) return; // Sadece düzenleme modunda tıklanabilir
-    setActiveSelection(type);
+  const openSelection = () => {
+    if (!isEditing) return;
     setSelectionModalVisible(true);
   };
 
   const handleSelectOption = (option) => {
-    if (activeSelection === 'color1') setColor1(option);
-    if (activeSelection === 'color2') setColor2(option);
+    setColor1(option);
   };
 
   return (
@@ -176,28 +170,14 @@ const ClothingDetailModal = ({ visible, item, onClose, onUpdateTrigger }) => {
                  </View>
             </View>
 
-            {/* 2. RENK 1 */}
             <View style={styles.fieldContainer}>
-                <Text style={styles.label}>Baskın Renk (Color 1):</Text>
+                <Text style={styles.label}>Renk:</Text>
                 <TouchableOpacity 
                     style={[styles.selector, isEditing && styles.selectorActive]} 
-                    onPress={() => openSelection('color1')}
+                    onPress={openSelection}
                     disabled={!isEditing}
                 >
                     <Text style={styles.valueText}>{color1 ? color1.label : '-'}</Text>
-                    {isEditing && <Ionicons name="chevron-down" size={20} color={COLORS.primary} />}
-                </TouchableOpacity>
-            </View>
-
-            {/* 3. RENK 2 */}
-            <View style={styles.fieldContainer}>
-                <Text style={styles.label}>İkincil Renk (Color 2):</Text>
-                <TouchableOpacity 
-                    style={[styles.selector, isEditing && styles.selectorActive]} 
-                    onPress={() => openSelection('color2')}
-                    disabled={!isEditing}
-                >
-                    <Text style={styles.valueText}>{color2 ? color2.label : '-'}</Text>
                     {isEditing && <Ionicons name="chevron-down" size={20} color={COLORS.primary} />}
                 </TouchableOpacity>
             </View>
