@@ -65,9 +65,10 @@ class ErrorHandler {
         
       case ERROR_CATEGORIES.AUTH:
         title = 'Authentication Error';
-        if (error.response?.status === 401) {
+        // Only override with generic messages if backend didn't provide a specific one
+        if (error.response?.status === 401 && (!message || message === 'Request failed with status code 401')) {
           message = ERROR_MESSAGES.AUTH.INVALID_TOKEN;
-        } else if (error.response?.status === 403) {
+        } else if (error.response?.status === 403 && (!message || message === 'Request failed with status code 403')) {
           message = ERROR_MESSAGES.AUTH.UNAUTHORIZED;
         }
         break;
