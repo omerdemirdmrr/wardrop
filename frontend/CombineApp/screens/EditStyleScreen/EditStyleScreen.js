@@ -7,6 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../colors';
 import { useAuth } from '../../context/AuthContext';
 import { useError } from '../../context/ErrorContext';
+import apiClient from '../../api/client';
+import { errorHandler } from '../../utils';
 
 // Seçenek listeleri
 const AVAILABLE_STYLES = ['Casual', 'Minimalist', 'Streetwear', 'Boho', 'Vintage', 'Formal', 'Sporty'];
@@ -21,6 +23,7 @@ const EditStyleScreen = ({ navigation }) => {
 
     const [selectedColors, setSelectedColors] = useState(user.favoriteColors || []);
     const [selectedStyles, setSelectedStyles] = useState(user.stylePreferences || []);
+    const [loading, setLoading] = useState(false);
 
     // --- RENK SEÇİMİ (TOGGLE) ---
     const toggleColor = (color) => {
@@ -53,13 +56,34 @@ const EditStyleScreen = ({ navigation }) => {
         }
     };
 
-    const handleSave = () => {
-        // Global state'i güncelle
-        updateUser({ 
-            favoriteColors: selectedColors, 
-            stylePreferences: selectedStyles 
-        });
-        navigation.goBack();
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            const response = await apiClient.put("/users/changepreferences", {
+                favoriteColors: selectedColors,
+                stylePreferences: selectedStyles
+            });
+
+            // Backend'den gelen güncellenmiş verileri local state'e yansıt
+            if (response.data?.data?.preferences) {
+                updateUser({
+                    favoriteColors: response.data.data.preferences.favoriteColors,
+                    stylePreferences: response.data.data.preferences.stylePreferences
+                });
+            } else {
+                // Fallback: Eğer response yapısı farklıysa local değerleri kullan
+                updateUser({
+                    favoriteColors: selectedColors,
+                    stylePreferences: selectedStyles
+                });
+            }
+            navigation.goBack();
+        } catch (error) {
+            const standardError = errorHandler.handleApiError(error);
+            showError(errorHandler.formatErrorForUser(standardError));
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -74,7 +98,7 @@ const EditStyleScreen = ({ navigation }) => {
                                 const isSelected = selectedColors.includes(color);
                                 return (
                                     <TouchableOpacity
-                                        key={color} 
+                                        key={color}
                                         style={[styles.colorBox, { backgroundColor: color }]}
                                         onPress={() => toggleColor(color)}
                                     >
@@ -94,7 +118,7 @@ const EditStyleScreen = ({ navigation }) => {
                                 const isSelected = selectedStyles.includes(style);
                                 return (
                                     <TouchableOpacity
-                                        key={style} 
+                                        key={style}
                                         style={[styles.tag, isSelected ? styles.tagSelected : styles.tagDefault]}
                                         onPress={() => toggleStyle(style)}
                                     >
@@ -107,8 +131,14 @@ const EditStyleScreen = ({ navigation }) => {
                         </View>
                     </View>
 
-                    <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                        <Text style={styles.saveButtonText}>Değişiklikleri Kaydet</Text>
+                    <TouchableOpacity
+                        style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+                        onPress={handleSave}
+                        disabled={loading}
+                    >
+                        <Text style={styles.saveButtonText}>
+                            {loading ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
+                        </Text>
                     </TouchableOpacity>
                 </ScrollView>
             </SafeAreaView>
@@ -124,7 +154,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingBottom: 20,
         // YENİ: İlk bölüme başlık için 10px boşluk
-        paddingTop: 10, 
+        paddingTop: 10,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.secondary,
     },
@@ -134,7 +164,7 @@ const styles = StyleSheet.create({
         color: COLORS.textPrimary,
         marginBottom: 20,
         // YENİ: İkinci bölümün başlığı için de 10px boşluk
-        paddingTop: 10, 
+        paddingTop: 10,
     },
     gridContainer: {
         flexDirection: 'row',
@@ -176,15 +206,18 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     saveButton: {
-        backgroundColor: COLORS.primary, 
+        backgroundColor: COLORS.primary,
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
         height: 50,
         margin: 20,
     },
+    saveButtonDisabled: {
+        opacity: 0.6,
+    },
     saveButtonText: {
-        color: COLORS.primaryText, 
+        color: COLORS.primaryText,
         fontSize: 18,
         fontWeight: 'bold',
     },

@@ -23,25 +23,55 @@ const EditProfileScreen = ({ navigation }) => {
     const { user, updateUser } = useAuth();
     const { showError } = useError();
 
-    const [name, setName] = useState(user?.name || "");
-    const [imageUri, setImageUri] = useState(user?.profileImageUrl || "");
+    const [username, setUsername] = useState(user?.username || "");
+    const [imageUri, setImageUri] = useState(user?.imageUrl || "");
     const [loading, setLoading] = useState(false);
 
     // useEffect kaldırıldı: Kullanıcı yazı yazarken location update gelince input siliniyordu.
-    
+
     const handleSave = async () => {
         setLoading(true);
         try {
-            const response = await apiClient.put("/users/profile", {
-                name,
-                profileImageUrl: imageUri,
-                setTimeout:2000000000
+            const formData = new FormData();
+            formData.append('username', username);
+
+            // Eğer yeni bir resim seçildiyse, dosya olarak ekle
+            if (imageUri && imageUri !== user?.imageUrl) {
+                const uriParts = imageUri.split('/');
+                const fileName = uriParts[uriParts.length - 1];
+                let fileType = 'image/jpeg';
+                const fileTypeMatch = /\.(\w+)$/.exec(fileName);
+                if (fileTypeMatch) {
+                    fileType = `image/${fileTypeMatch[1]}`;
+                }
+
+                formData.append('image', {
+                    uri: imageUri,
+                    name: fileName,
+                    type: fileType,
+                });
+            }
+
+            const response = await apiClient.put("/users/profile", formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
             });
 
-            if (response.data && response.data.user) {
-                updateUser(response.data.user);
-                navigation.goBack();
+            // Backend'den gelen user verisini mevcut verilerle birleştir
+            if (response.data?.data?.user) {
+                updateUser({
+                    username: response.data.data.user.username,
+                    imageUrl: response.data.data.user.imageUrl
+                });
+            } else {
+                // Fallback: local değerleri kullan
+                updateUser({
+                    username: username,
+                    imageUrl: imageUri
+                });
             }
+            navigation.goBack();
         } catch (error) {
             const standardError = errorHandler.handleApiError(error);
             showError(errorHandler.formatErrorForUser(standardError));
@@ -94,24 +124,14 @@ const EditProfileScreen = ({ navigation }) => {
                     </View>
 
                     <View style={styles.formContainer}>
-                        <Text style={styles.label}>Name</Text>
+                        <Text style={styles.label}>Username</Text>
                         <TextInput
                             style={styles.input}
-                            value={name}
-                            onChangeText={setName}
-                            placeholder="Your name"
+                            value={username}
+                            onChangeText={setUsername}
+                            placeholder="Your username"
                             placeholderTextColor={COLORS.gray}
                         />
-
-                        <Text style={styles.label}>Location</Text>
-                        <View style={styles.locationDisplay}>
-                            <Text style={styles.locationText}>
-                                {user?.neighborhood}, {user?.city}, {user?.country}
-                            </Text>
-                        </View>
-                        <Text style={styles.locationHint}>
-                            Location is automatically detected from your device GPS
-                        </Text>
                     </View>
 
                     <TouchableOpacity
@@ -165,28 +185,6 @@ const styles = StyleSheet.create({
         color: COLORS.textPrimary,
         borderWidth: 1,
         borderColor: COLORS.secondary,
-    },
-    locationDisplay: {
-        width: "100%",
-        height: 50,
-        backgroundColor: COLORS.card,
-        borderRadius: 10,
-        paddingHorizontal: 15,
-        justifyContent: "center",
-        borderWidth: 1,
-        borderColor: COLORS.secondary,
-        marginBottom: 10,
-    },
-    locationText: {
-        fontSize: 16,
-        color: COLORS.textPrimary,
-        fontWeight: "500",
-    },
-    locationHint: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
-        marginBottom: 20,
-        fontStyle: "italic",
     },
     saveButton: {
         backgroundColor: COLORS.primary,

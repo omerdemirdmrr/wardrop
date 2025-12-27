@@ -71,11 +71,10 @@ const ProfileScreen = ({ navigation }) => {
                     {/* --- PROFİL BAŞLIK ALANI --- */}
                     <View style={styles.header}>
                         <Image
-                            source={{ uri: user.profileImageUrl || "https://via.placeholder.com/150/FFFFFF/1B1229?text=User" }}
+                            source={{ uri: user.imageUrl || "https://via.placeholder.com/150/FFFFFF/1B1229?text=User" }}
                             style={styles.profileImage}
                         />
-                        <Text style={styles.profileName}>{user.name}</Text>
-                        <Text style={styles.profileLocation}>{user.location}</Text>
+                        <Text style={styles.profileName}>{user.username}</Text>
                     </View>
 
                     {/* --- MENÜ KARTI --- */}
@@ -150,11 +149,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         color: COLORS.textPrimary,
-    },
-    profileLocation: {
-        fontSize: 16,
-        color: COLORS.textSecondary,
-        paddingBottom: 10,
+        marginBottom: 10,
     },
     menuContainer: {
         marginTop: 20,

@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { errorHandler } from '../utils';
 
-const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "AIzaSyC4lC2-OqayitW_ttRTBtFcQCNQYdjYzrg";
+const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "AIzaSyC09J4Xp-PQOqY9Y0D7hszfzFIn3aS0QW0";
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 

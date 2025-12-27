@@ -15,7 +15,7 @@ router.post("/signup", async (req, res) => {
   console.log(req.body)
   try {
     const user = req.body;
-    const { username, email, password} = user;
+    const { username, email, password } = user;
 
     if (!email || !password || !username) {
       console.log("Missing fields in signup:", { email, password, username });
@@ -28,24 +28,24 @@ router.post("/signup", async (req, res) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       console.log("Invalid email format:", email);
-        return res.status(400).json(response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
-            message: "Invalid email format",
-            description: "Please enter a valid email address"
-        }));
+      return res.status(400).json(response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
+        message: "Invalid email format",
+        description: "Please enter a valid email address"
+      }));
     }
 
     if (password.length < 6) {
       console.log("Password too short:", password);
-        return res.status(400).json(response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
-            message: "Password too short",
-            description: "Password must be at least 6 characters long"
-        }));
+      return res.status(400).json(response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
+        message: "Password too short",
+        description: "Password must be at least 6 characters long"
+      }));
     }
 
     const existUser = await User.findOne({ email: user.email });
 
     if (existUser) {
-      console.log("User already exists with email:", user.email); 
+      console.log("User already exists with email:", user.email);
       const errorResponse = response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
         message: "Error adding user",
         description: "User already exists"
@@ -55,9 +55,9 @@ router.post("/signup", async (req, res) => {
       const saltrounds = 10;
       const hashedPassword = await bcrypt.hash(user.password, saltrounds);
       user.password = hashedPassword;
-      
+
       const userdata = await User.create(user);
-      
+
       console.log("yeni kullanıcı", userdata);
       const successResponse = response.successResponse(_enum.HTTP_STATUS.CREATED, {
         message: "user added succesfully",
@@ -122,7 +122,7 @@ router.post("/login", async (req, res) => {
     );
 
     // GÜNCELLEME: Login olduğunda kullanıcının tercihlerini de response'a ekledim.
-    res.json({ token }) ;
+    res.json({ token });
   } catch (err) {
     console.log("!catch", err);
     const errorResponse = response.errorResponse(
@@ -133,7 +133,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-  /* UPDATE PROFILE (USERNAME + PHOTO) */
+/* UPDATE PROFILE (USERNAME + PHOTO) */
 router.put(
   "/profile",
   verifyToken,
@@ -229,7 +229,7 @@ router.put(
 router.get("/getprofile", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const user = await User.findById(userId).select("username email imageUrl");
+    const user = await User.findById(userId).select("username email imageUrl favoriteColors stylePreferences");
 
     return res.json({ message: "Profile fetched successfully", user });
   } catch (err) {

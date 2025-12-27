@@ -85,12 +85,12 @@ const HomeScreen = ({ navigation }) => {
             setLoading(true);
             const response = await generateOutfit(params);
             console.log("generateOutfit response:", response);
-            
+
             if (!response.success) {
                 showError(errorHandler.formatErrorForUser(response.error));
                 return;
             }
-            
+
             if (response.data?.success) {
                 setOutfit(response.data.data);
             } else {
@@ -136,12 +136,12 @@ const HomeScreen = ({ navigation }) => {
         try {
             setProcessingAction(true);
             const response = await updateOutfitStatus(outfit._id, 'worn');
-            
+
             if (!response.success) {
                 showError(errorHandler.formatErrorForUser(response.error));
                 return;
             }
-            
+
             fetchOutfit();
         } catch (error) {
             const standardError = errorHandler.handleApiError(error);
@@ -158,12 +158,12 @@ const HomeScreen = ({ navigation }) => {
             setProcessingAction(true);
             const dislikedId = outfit._id;
             const response = await updateOutfitStatus(dislikedId, 'disliked');
-            
+
             if (!response.success) {
                 showError(errorHandler.formatErrorForUser(response.error));
                 return;
             }
-            
+
             fetchOutfit({ exclude: dislikedId, feedback: 'disliked' });
         } catch (error) {
             const standardError = errorHandler.handleApiError(error);
@@ -190,7 +190,7 @@ const HomeScreen = ({ navigation }) => {
                     {/* ÜST BAŞLIK VE AYARLAR BUTONU */}
                     <View style={styles.header}>
                         <Text style={styles.greeting}>
-                            Günaydın, {user?.name ? user.name.split(" ")[0] : "User"}
+                            Günaydın, {user?.username ? user.username.split(" ")[0] : "User"}
                         </Text>
 
                         <TouchableOpacity onPress={handleGoToSettings}>
@@ -244,7 +244,7 @@ const HomeScreen = ({ navigation }) => {
                             style={[
                                 styles.actionButton,
                                 (loading || processingAction) &&
-                                    styles.disabledButton,
+                                styles.disabledButton,
                             ]}
                             onPress={handleLike}
                             disabled={loading || processingAction}
@@ -264,7 +264,7 @@ const HomeScreen = ({ navigation }) => {
                             style={[
                                 styles.actionButton,
                                 (loading || processingAction) &&
-                                    styles.disabledButton,
+                                styles.disabledButton,
                             ]}
                             onPress={() => fetchOutfit()}
                             disabled={loading || processingAction}
@@ -284,7 +284,7 @@ const HomeScreen = ({ navigation }) => {
                             style={[
                                 styles.actionButton,
                                 (loading || processingAction) &&
-                                    styles.disabledButton,
+                                styles.disabledButton,
                             ]}
                             onPress={handleDislike}
                             disabled={loading || processingAction}

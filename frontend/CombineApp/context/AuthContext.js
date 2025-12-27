@@ -9,12 +9,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const AuthContext = createContext();
 
 const dummyUserProfile = {
-    name: "Elisa Yıldırım",
+    username: "Elisa Yıldırım",
+    email: "",
     location: "Istanbul, TR",
     country: "Turkey",
     city: "Istanbul",
     neighborhood: "Beşiktaş",
-    profileImageUrl: "https://via.placeholder.com/150/FFFFFF/1B1229?text=User",
+    imageUrl: "https://via.placeholder.com/150/FFFFFF/1B1229?text=User",
     favoriteColors: [COLORS.primary, COLORS.secondary, "#d1c4e9"],
     stylePreferences: ["Casual", "Minimalist"],
     importantDates: [
@@ -231,7 +232,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         // Register logout callback for API client interceptor
         setLogoutCallback(logout);
-        
+
         return () => {
             setLogoutCallback(null);
         };
@@ -263,12 +264,16 @@ export const AuthProvider = ({ children }) => {
                 try {
                     const profileResponse = await apiClient.get("/users/getprofile");
                     if (profileResponse.data && profileResponse.data.user) {
-                        setUser(profileResponse.data.user);
+                        // Mevcut local verileri (location vb.) koruyarak backend verilerini ekle
+                        setUser((currentUser) => ({
+                            ...currentUser,
+                            ...profileResponse.data.user
+                        }));
                     }
                 } catch (profileError) {
                     console.error("Failed to fetch user profile after login:", profileError);
                 }
-                
+
                 return { success: true };
             }
             return { success: false, error: 'No token received' };
@@ -297,7 +302,11 @@ export const AuthProvider = ({ children }) => {
                 // Always fetch user profile when restoring token
                 const response = await apiClient.get("/users/getprofile");
                 if (response.data && response.data.user) {
-                    setUser(response.data.user);
+                    // Mevcut local verileri (location vb.) koruyarak backend verilerini ekle
+                    setUser((currentUser) => ({
+                        ...currentUser,
+                        ...response.data.user
+                    }));
                 }
             } catch (error) {
                 console.log("Failed to restore user profile:", error);

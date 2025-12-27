@@ -74,7 +74,7 @@ router.post("/add", verifyToken, upload.single("image"), async (req, res) => {
             imageUrl = cloudinaryUpload.secure_url;
             imagePublicId = cloudinaryUpload.public_id
         }
-        
+
         console.log("[/clothes/add] - Cloudinary upload finished. Image URL:", imageUrl);
 
         const newClothData = {
@@ -89,16 +89,16 @@ router.post("/add", verifyToken, upload.single("image"), async (req, res) => {
 
         // İsteğe bağlı alanları varsa ekle
         if (subCategory) newClothData.subCategory = subCategory;
-       
+
         if (size) newClothData.size = size;
         if (material) newClothData.material = material;
-        
+
         if (season) newClothData.season = season;
-    
-        
+
+
 
         const newCloth = new ClothingItems(newClothData);
-        
+
         console.log("[/clothes/add] - Saving new cloth to database...");
         const savedCloth = await newCloth.save();
         console.log("[/clothes/add] - Cloth saved successfully.");
@@ -122,7 +122,7 @@ router.post("/add", verifyToken, upload.single("image"), async (req, res) => {
 router.put("/update/:id", verifyToken, async (req, res) => {
     try {
         const updates = req.body;
-        
+
         // Güvenlik: Kullanıcı başkasının kıyafetini güncelleyememeli
         // Hem ID eşleşmeli hem de userId token'daki ile aynı olmalı
         const updatedCloth = await ClothingItems.findOneAndUpdate(
