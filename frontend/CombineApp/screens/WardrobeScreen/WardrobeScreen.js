@@ -177,8 +177,8 @@ const WardrobeScreen = ({ navigation }) => {
     };
 
     const handleUpdateTrigger = () => {
-        console.log("Liste güncelleniyor...");
-        fetchClothes(); // Listeyi sunucudan/dummydatan tekrar çek
+        console.log("Refreshing list...");
+        fetchClothes(); // Fetch list from server again
     };
 
     return (
@@ -232,13 +232,13 @@ const WardrobeScreen = ({ navigation }) => {
                             <View style={styles.emptyContainer}>
                                 {isAnyFilterActive ? (
                                     <>
-                                        <Text style={styles.emptyMessage}>Filtrelere uygun eşya bulunamadı.</Text>
-                                        <Text style={styles.emptySubMessage}>Aramayı veya filtreleri değiştirmeyi dene.</Text>
+                                        <Text style={styles.emptyMessage}>No items found matching filters.</Text>
+                                        <Text style={styles.emptySubMessage}>Try adjusting your search or filters.</Text>
                                     </>
                                 ) : (
                                     <>
                                         <Text style={styles.emptyMessage}>Wardrobe is empty.</Text>
-                                        <Text style={styles.emptySubMessage}>Yeni kıyafet eklemek için '+' butonuna bas.</Text>
+                                        <Text style={styles.emptySubMessage}>Press the '+' button to add new clothing.</Text>
                                     </>
                                 )}
                             </View>

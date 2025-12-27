@@ -40,7 +40,7 @@ router.post("/add", verifyToken, async (req, res) => {
             return res.status(_enum.HTTP_STATUS.BAD_REQUEST).json(
                 response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
                     message: "Eksik bilgi",
-                    description: "Kombin adı ve en az bir kıyafet seçilmelidir."
+                    description: "Outfit name and at least one clothing item must be selected."
                 })
             );
         }
@@ -57,7 +57,7 @@ router.post("/add", verifyToken, async (req, res) => {
 
         return res.status(_enum.HTTP_STATUS.CREATED).json(
             response.successResponse(_enum.HTTP_STATUS.CREATED, {
-                message: "Kombin başarıyla oluşturuldu",
+                message: "Outfit created successfully",
                 outfit: savedOutfit
             })
         );
@@ -80,7 +80,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
 
         if (!deleted) {
             return res.status(_enum.HTTP_STATUS.NOT_FOUND).json(
-                response.errorResponse(_enum.HTTP_STATUS.NOT_FOUND, "Kombin bulunamadı")
+                response.errorResponse(_enum.HTTP_STATUS.NOT_FOUND, "Outfit not found")
             );
         }
 

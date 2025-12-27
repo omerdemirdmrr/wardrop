@@ -137,7 +137,7 @@ const EditStyleScreen = ({ navigation }) => {
                         disabled={loading}
                     >
                         <Text style={styles.saveButtonText}>
-                            {loading ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
+                            {loading ? "Saving..." : "Save Changes"}
                         </Text>
                     </TouchableOpacity>
                 </ScrollView>

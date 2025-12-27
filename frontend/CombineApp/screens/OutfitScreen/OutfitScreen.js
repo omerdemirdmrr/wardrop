@@ -364,7 +364,7 @@ const OutfitScreen = ({ navigation, route }) => {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                  {loading ? "Yükleniyor..." : "Henüz kombin yok."}
+                  {loading ? "Loading..." : "No outfits yet."}
               </Text>
             </View>
           }

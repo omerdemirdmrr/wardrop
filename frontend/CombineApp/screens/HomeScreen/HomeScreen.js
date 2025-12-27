@@ -28,7 +28,7 @@ const WeatherCard = ({ weather }) => {
             <View style={styles.weatherCard}>
                 <ActivityIndicator color={COLORS.textPrimary} />
                 <Text style={styles.weatherLoadingText}>
-                    Hava durumu alınıyor...
+                    Getting weather...
                 </Text>
             </View>
         );
@@ -126,7 +126,7 @@ const HomeScreen = ({ navigation }) => {
                 setWeather(weatherResponse.data);
             }
         } catch (error) {
-            console.error("Hava durumu hatası:", error);
+            console.error("Weather error:", error);
         }
     }, [user]);
 
@@ -190,7 +190,7 @@ const HomeScreen = ({ navigation }) => {
                     {/* ÜST BAŞLIK VE AYARLAR BUTONU */}
                     <View style={styles.header}>
                         <Text style={styles.greeting}>
-                            Günaydın, {user?.username ? user.username.split(" ")[0] : "User"}
+                            Good day, {user?.username ? user.username.split(" ")[0] : "User"}
                         </Text>
 
                         <TouchableOpacity onPress={handleGoToSettings}>
@@ -206,7 +206,7 @@ const HomeScreen = ({ navigation }) => {
 
                     <View style={styles.suggestionHeader}>
                         <Text style={styles.sectionTitle}>
-                            Günün Kombin Önerisi
+                            Today's Outfit Suggestion
                         </Text>
                     </View>
 
@@ -219,8 +219,8 @@ const HomeScreen = ({ navigation }) => {
                                 />
                                 <Text style={styles.loadingText}>
                                     {loading
-                                        ? "Tarzın oluşturuluyor..."
-                                        : "Mükemmel kombin aranıyor..."}
+                                        ? "Creating your style..."
+                                        : "Looking for the perfect outfit..."}
                                 </Text>
                             </View>
                         ) : (

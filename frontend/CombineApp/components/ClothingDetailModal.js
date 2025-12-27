@@ -125,7 +125,7 @@ const ClothingDetailModal = ({ visible, item, onClose, onUpdateTrigger }) => {
                   style={styles.iconBtn}
                 >
                   <Text style={{ color: COLORS.gray, fontWeight: "bold" }}>
-                    İptal
+                    Cancel
                   </Text>
                 </TouchableOpacity>
               )}
@@ -136,11 +136,11 @@ const ClothingDetailModal = ({ visible, item, onClose, onUpdateTrigger }) => {
             {/* RESİM */}
             <Image source={{ uri: item.imageUrl }} style={styles.modalImage} />
 
-            {/* --- FORM ALANI --- */}
+            {/* --- FORM AREA --- */}
 
-            {/* 1. İSİM ALANI */}
+            {/* 1. NAME FIELD */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>İsim:</Text>
+              <Text style={styles.label}>Name:</Text>
               {isEditing ? (
                 <TextInput
                   style={styles.input}
@@ -152,25 +152,25 @@ const ClothingDetailModal = ({ visible, item, onClose, onUpdateTrigger }) => {
               )}
             </View>
 
-            {/* KATEGORİ & MEVSİM (Read Only - Değiştirilemez kalsın dedik ama istenirse açılabilir) */}
+            {/* CATEGORY & SEASON (Read Only - Can be made editable if needed) */}
             <View style={styles.row}>
               <View style={styles.fieldContainerHalf}>
-                <Text style={styles.label}>Kategori:</Text>
+                <Text style={styles.label}>Category:</Text>
                 <Text style={styles.valueText}>{item.category}</Text>
               </View>
               <View style={styles.fieldContainerHalf}>
-                <Text style={styles.label}>Mevsim:</Text>
+                <Text style={styles.label}>Season:</Text>
                 <Text style={styles.valueText}>{item.season}</Text>
               </View>
             </View>
 
-            {/* RENK (Sadece görüntüleme) */}
+            {/* COLOR (Display only) */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Renk:</Text>
+              <Text style={styles.label}>Color:</Text>
               <Text style={styles.valueText}>{item.color || "-"}</Text>
             </View>
 
-            {/* KAYDET BUTONU (Sadece Edit Modunda Görünür) */}
+            {/* SAVE BUTTON (Only visible in Edit Mode) */}
             {isEditing && (
               <TouchableOpacity
                 style={styles.saveButton}
@@ -181,7 +181,7 @@ const ClothingDetailModal = ({ visible, item, onClose, onUpdateTrigger }) => {
                   <ActivityIndicator color={COLORS.primaryText} />
                 ) : (
                   <Text style={styles.saveButtonText}>
-                    Değişiklikleri Kaydet
+                    Save Changes
                   </Text>
                 )}
               </TouchableOpacity>

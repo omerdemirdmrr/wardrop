@@ -67,7 +67,7 @@ router.post("/signup", async (req, res) => {
 
       const userdata = await User.create(user);
 
-      console.log("yeni kullanıcı", userdata);
+      console.log("new user", userdata);
       const successResponse = response.successResponse(
         _enum.HTTP_STATUS.CREATED,
         {

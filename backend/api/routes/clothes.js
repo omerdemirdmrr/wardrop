@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-console.log("Clothes.js dosyası okundu!"); // <--- BU SATIRI EKLE
+console.log("Clothes.js file loaded!"); // <--- ADD THIS LINE
 var ClothingItems = require('../db/models/ClothingItems'); // Model yolunu kontrol et
 var response = require("../lib/Response");
 var _enum = require("../config/enum");
@@ -9,7 +9,7 @@ const upload = require("../lib/upload");
 const cloudinary = require("../config/cloudinary");
 
 router.get('/test', (req, res) => {
-    res.send("Bağlantı başarılı! Clothes rotasına ulaştın.");
+    res.send("Connection successful! You reached the Clothes route.");
 });
 
 /* GET all clothes for the logged-in user */

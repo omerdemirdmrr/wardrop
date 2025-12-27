@@ -47,12 +47,12 @@ const SettingsScreen = ({ navigation }) => {
   <Text>Test Error System</Text>
 </TouchableOpacity>
             <SettingsMenuItem
-              title="Profili Düzenle"
+              title="Edit Profile"
               iconName="person-outline"
               onPress={() => navigation.navigate('EditProfile')}
             />
             <SettingsMenuItem
-              title="Stil ve Renkleri Düzenle"
+              title="Edit Style and Colors"
               iconName="color-palette-outline"
               onPress={() => navigation.navigate('EditStyle')}
             />
@@ -64,11 +64,11 @@ const SettingsScreen = ({ navigation }) => {
             />
           </View>
 
-          {/* --- ÇIKIŞ BUTONU --- */}
+          {/* --- LOGOUT BUTTON --- */}
           <View style={styles.logoutButtonContainer}>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={22} color={'#E74C3C'} />
-              <Text style={styles.logoutButtonText}>Çıkış Yap</Text>
+              <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
           </View>
         </View>
