@@ -94,4 +94,24 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
     }
 });
 
+router.delete("/deletedisliked", verifyToken, async (req, res) => {
+    try {
+        const result = await Outfits.deleteMany({
+            userId: req.user.id,
+            status: 'disliked'
+        });
+
+        return res.status(_enum.HTTP_STATUS.OK).json(
+            response.successResponse(_enum.HTTP_STATUS.OK, {
+                message: "Disliked outfits deleted successfully",
+                deletedCount: result.deletedCount
+            })
+        );
+    } catch (err) {
+        return res.status(_enum.HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+            response.errorResponse(_enum.HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message)
+        );
+    } 
+}); 
+
 module.exports = router;

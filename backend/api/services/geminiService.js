@@ -58,7 +58,8 @@ async function generateOutfitWithGemini(clothingItems, excludedOutfits = []) {
 
     Yapman gereken:
     1. "Kıyafetler" listesinden, "Kaçınılması Gereken Kombinler" listesindekilere benzemeyen, birbiriyle uyumlu kıyafetleri seçerek yeni bir kombin oluştur.
-    2. Cevap olarak, sadece seçtiğin kıyafetlerin 'id'lerini içeren bir JSON nesnesi döndür.
+    2. Kombin oluştururken en az bir üst giyim, bir alt giyim ve bir ayakkabı içermesine dikkat et.
+    3. Cevap olarak, sadece seçtiğin kıyafetlerin 'id'lerini içeren bir JSON nesnesi döndür.
     Cevabın şu formatta olmalı: { "outfit_ids": ["id1", "id2", "id3", ...] }
     Başka hiçbir açıklama veya metin ekleme. Sadece JSON nesnesini döndür.
   `;
