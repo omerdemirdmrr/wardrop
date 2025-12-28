@@ -21,6 +21,17 @@ const checkClothingCount = async (req, res, next) => {
       });
     }
 
+    const hasUpper = await ClothingItems.exists({ userId, category: "Üst Giyim" });
+    const hasLower = await ClothingItems.exists({ userId, category: "Alt Giyim" });
+    const hasFootwear = await ClothingItems.exists({ userId, category: "Ayakkabı" });
+
+    if (!hasUpper || !hasLower || !hasFootwear) {
+      return res.status(400).json({
+        success: false,
+        message: "To create an outfit, you need 1 bottom, 1 top, and 1 pair of shoes.",
+      });
+    }
+
     // ✅ Şart sağlandı → devam
     next();
   } catch (error) {
