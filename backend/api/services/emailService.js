@@ -165,8 +165,34 @@ async function sendPasswordResetEmail(email, token) {
   return await transporter.sendMail(mailOptions);
 }
 
+/**
+ * Send password reset code
+ * @param {string} email - User email address
+ * @param {string} code - 6-digit reset code
+ */
+async function sendPasswordResetCode(email, code) {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || '"Wardrop" <noreply@wardrop.com>',
+    to: email,
+    subject: 'Password Reset Code - Wardrop',
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+        <h2>Password Reset Request</h2>
+        <p>You requested a password reset. Use the following code to reset your password:</p>
+        <h1 style="color: #B13BFF; letter-spacing: 5px; background: #f4f4f4; padding: 10px; display: inline-block;">${code}</h1>
+        <p>This code will expire in 15 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      </div>
+    `,
+    text: `Your password reset code is: ${code}. It expires in 15 minutes.`
+  };
+
+  return await transporter.sendMail(mailOptions);
+}
+
 module.exports = {
   generateVerificationToken,
   sendVerificationEmail,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendPasswordResetCode
 };
