@@ -107,6 +107,7 @@ const HomeScreen = ({ navigation }) => {
                     category: 'VALIDATION'
                 });
                 console.warn("Outfit generation failed:", response.data?.message);
+                return;
             }
         } catch (error) {
             const standardError = errorHandler.handleApiError(error);
@@ -232,16 +233,28 @@ const HomeScreen = ({ navigation }) => {
                     </View>
 
                     <View style={styles.gridContainer}>
-                        {loading || !outfit ? (
+                        {loading ? (
                             <View style={styles.loadingContainer}>
                                 <ActivityIndicator
                                     size="large"
                                     color={COLORS.primary}
                                 />
                                 <Text style={styles.loadingText}>
-                                    {loading
-                                        ? "Creating your style..."
-                                        : "Looking for the perfect outfit..."}
+                                    Creating your style...
+                                </Text>
+                            </View>
+                        ) : !outfit ? (
+                            <View style={styles.loadingContainer}>
+                                <Ionicons
+                                    name="shirt-outline"
+                                    size={48}
+                                    color={COLORS.textSecondary}
+                                />
+                                <Text style={styles.loadingText}>
+                                    No outfit available
+                                </Text>
+                                <Text style={[styles.loadingText, { fontSize: 14, marginTop: 5 }]}>
+                                    Try adding more items to your wardrobe
                                 </Text>
                             </View>
                         ) : (
