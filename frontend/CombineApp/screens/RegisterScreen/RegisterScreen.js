@@ -139,7 +139,17 @@ const RegisterScreen = ({ navigation }) => {
             });
 
             if (response.data) {
-                navigation.navigate("Login");
+                // Show success message with verification instructions
+                Alert.alert(
+                    "Registration Successful! ✅",
+                    "Please check your email inbox to verify your account. You must verify your email before you can login.",
+                    [
+                        {
+                            text: "OK",
+                            onPress: () => navigation.navigate("Login")
+                        }
+                    ]
+                );
             }
         } catch (error) {
             const standardError = errorHandler.handleApiError(error);

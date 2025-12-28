@@ -15,6 +15,7 @@ import { COLORS } from "../colors";
 import { useAuth } from "../../context/AuthContext";
 import { useError } from "../../context/ErrorContext";
 import { errorHandler } from "../../utils";
+import apiClient from "../../api/client";
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState("");
@@ -56,8 +57,41 @@ const LoginScreen = ({ navigation }) => {
 
         // 2. Eğer giriş başarısızsa kullanıcıya hata göster
         if (!result.success) {
-            const standardError = errorHandler.handleApiError(result.error);
-            showError(errorHandler.formatErrorForUser(standardError));
+            // Check if error is email not verified
+            if (result.error?.response?.data?.code === "EMAIL_NOT_VERIFIED" ||
+                result.error?.response?.data?.message?.includes("Email not verified")) {
+                
+                // Show alert with resend option
+                Alert.alert(
+                    "Email Not Verified",
+                    "Please verify your email before logging in. Would you like us to resend the verification email?",
+                    [
+                        {
+                            text: "Cancel",
+                            style: "cancel"
+                        },
+                        {
+                            text: "Resend Email",
+                            onPress: async () => {
+                                try {
+                                    await apiClient.post("/users/resend-verification", { email: normalizedEmail });
+                                    Alert.alert("Success", "Verification email sent! Please check your inbox.");
+                                } catch (error) {
+                                    showError({
+                                        title: 'Error',
+                                        message: 'Failed to resend verification email',
+                                        category: 'NETWORK'
+                                    });
+                                }
+                            }
+                        }
+                    ]
+                );
+            } else {
+                // Show normal error
+                const standardError = errorHandler.handleApiError(result.error);
+                showError(errorHandler.formatErrorForUser(standardError));
+            }
         }
         // NOT: Eğer giriş başarılı olursa, App.js'teki 'token' state'i değişeceği için
         // uygulama otomatik olarak Ana Sayfa'ya (MainTabs) geçiş yapacaktır.

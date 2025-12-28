@@ -9,6 +9,7 @@ var jwt = require("jsonwebtoken");
 var verifyToken = require("../lib/authToken");
 const upload = require("../lib/upload");
 const cloudinary = require("../config/cloudinary");
+const emailService = require("../services/emailService");
 
 /* 1. SIGNUP (KAYIT OL) */
 router.post("/signup", async (req, res) => {
@@ -68,11 +69,39 @@ router.post("/signup", async (req, res) => {
       const userdata = await User.create(user);
 
       console.log("new user", userdata);
+
+      // Generate verification token and send email
+      try {
+        const verificationToken = emailService.generateVerificationToken();
+        const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        // Save token to user
+        userdata.emailVerificationToken = verificationToken;
+        userdata.emailVerificationExpires = tokenExpiry;
+        await userdata.save();
+
+        // Send verification email
+        await emailService.sendVerificationEmail(
+          userdata.email,
+          verificationToken,
+          userdata.username
+        );
+
+        console.log("Verification email sent to:", userdata.email);
+      } catch (emailError) {
+        console.error("Error sending verification email:", emailError);
+        // Don't fail registration if email fails - user can resend later
+      }
+
       const successResponse = response.successResponse(
         _enum.HTTP_STATUS.CREATED,
         {
-          message: "user added succesfully",
-          description: userdata,
+          message: "Registration successful! Please check your email to verify your account.",
+          description: {
+            userId: userdata._id,
+            email: userdata.email,
+            username: userdata.username
+          },
         }
       );
       return res.status(_enum.HTTP_STATUS.CREATED).json(successResponse);
@@ -132,6 +161,17 @@ router.post("/login", async (req, res) => {
         }
       );
       return res.status(_enum.HTTP_STATUS.UNAUTHORIZED).json(errorResponse);
+    }
+
+    // Check if email is verified
+    if (!check.isEmailVerified) {
+      return res.status(403).json(
+        response.errorResponse(_enum.HTTP_STATUS.FORBIDDEN, {
+          message: "Email not verified",
+          description: "Please verify your email before logging in. Check your inbox for the verification link.",
+          code: "EMAIL_NOT_VERIFIED"
+        })
+      );
     }
 
     const token = jwt.sign(
@@ -436,6 +476,141 @@ router.put("/changepassword", verifyToken, async (req, res) => {
           err.message
         )
       );
+  }
+});
+
+/* EMAIL VERIFICATION ENDPOINTS */
+
+// Verify email with token
+router.get("/verify-email/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Find user with this verification token
+    const user = await User.findOne({
+      emailVerificationToken: token,
+      emailVerificationExpires: { $gt: Date.now() } // Token not expired
+    });
+
+    if (!user) {
+      return res.status(400).send(`
+        <html>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>Invalid or Expired Link</h1>
+            <p>This verification link is invalid or has expired.</p>
+            <p>Please request a new verification email from the app.</p>
+          </body>
+        </html>
+      `);
+    }
+
+    // Check if already verified
+    if (user.isEmailVerified) {
+      return res.status(200).send(`
+        <html>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>✅ Email Already Verified</h1>
+            <p>Your email has already been verified.</p>
+            <p>You can now login to your account.</p>
+          </body>
+        </html>
+      `);
+    }
+
+    // Verify the email
+    user.isEmailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+    await user.save();
+
+    return res.status(200).send(`
+      <html>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+          <h1>✅ Email Verified Successfully!</h1>
+          <p>Your email has been verified.</p>
+          <p>You can now login to your account.</p>
+        </body>
+      </html>
+    `);
+
+  } catch (err) {
+    console.error("Email verification error:", err);
+    return res.status(500).send(`
+      <html>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+          <h1>Error</h1>
+          <p>Something went wrong during verification.</p>
+          <p>Please try again or contact support.</p>
+        </body>
+      </html>
+    `);
+  }
+});
+
+// Resend verification email
+router.post("/resend-verification", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json(
+        response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
+          message: "Email required",
+          description: "Please provide your email address"
+        })
+      );
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json(
+        response.errorResponse(_enum.HTTP_STATUS.NOT_FOUND, {
+          message: "User not found",
+          description: "No account found with this email"
+        })
+      );
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json(
+        response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
+          message: "Email already verified",
+          description: "You can login to your account"
+        })
+      );
+    }
+
+    // Generate new verification token
+    const verificationToken = emailService.generateVerificationToken();
+    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    user.emailVerificationToken = verificationToken;
+    user.emailVerificationExpires = tokenExpiry;
+    await user.save();
+
+    // Send verification email
+    await emailService.sendVerificationEmail(
+      user.email,
+      verificationToken,
+      user.username
+    );
+
+    return res.status(200).json(
+      response.successResponse(_enum.HTTP_STATUS.OK, {
+        message: "Verification email sent",
+        description: "Please check your email inbox"
+      })
+    );
+
+  } catch (err) {
+    console.error("Resend verification error:", err);
+    return res.status(500).json(
+      response.errorResponse(
+        _enum.HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        err.message
+      )
+    );
   }
 });
 

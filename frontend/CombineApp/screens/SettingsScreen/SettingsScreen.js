@@ -43,9 +43,6 @@ const SettingsScreen = ({ navigation }) => {
         <View>
           {/* --- DÜZENLEME MENÜLERİ --- */}
           <View style={styles.menuContainer}>
-            <TouchableOpacity onPress={() => navigation.navigate('ErrorTest')}>
-  <Text>Test Error System</Text>
-</TouchableOpacity>
             <SettingsMenuItem
               title="Edit Profile"
               iconName="person-outline"
