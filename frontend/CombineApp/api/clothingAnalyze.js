@@ -2,81 +2,78 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { errorHandler } from '../utils';
 
-const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "AIzaSyC09J4Xp-PQOqY9Y0D7hszfzFIn3aS0QW0";
+const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// ---------------------------------------------------------
-// İSTEDİĞİN DETAYLI JSON FORMATI İÇİN ŞEMA TANIMI
-// ---------------------------------------------------------
+
 const complexClothingSchema = {
-  description: "Detailed clothing analysis in Turkish",
+  description: "Detailed clothing analysis",
   type: SchemaType.OBJECT,
   properties: {
     id: { type: SchemaType.NUMBER, description: "Unique ID" },
-    kiyafet_analizi: {
+    clothing_analysis: {
       type: SchemaType.OBJECT,
       properties: {
         success: {
           type: SchemaType.BOOLEAN
         },
-        genel_bilgi: {
+        general_info: { 
           type: SchemaType.OBJECT,
           properties: {
-            kategori: { type: SchemaType.STRING, description: "Örn: Dış Giyim, Üst Giyim" },
-            tur: { type: SchemaType.STRING, description: "Örn: Trençkot, Kazak, T-shirt" },
-            cinsiyet_grubu: { type: SchemaType.STRING, description: "Kadın, Erkek veya Unisex" },
-            mevsim: {
+            category: { type: SchemaType.STRING, description: "Ex: Top, Bottom, Shoe" },
+            type: { type: SchemaType.STRING, description: "Ex: Trench coat, Sweater, T-shirt" },
+            gender_group: { type: SchemaType.STRING, description: "Women, Men, or Unisex" },
+            season: {
               type: SchemaType.STRING,
-              enum: ["İlkbahar", "Yaz", "Sonbahar", "Kış", "Tüm Mevsimler"],
+              enum: ["Spring", "Summer", "Autumn", "Winter", "All Seasons"],
               description: "Select the most appropriate season."
             }
           },
-          required: ["kategori", "tur", "cinsiyet_grubu", "mevsim"]
+          required: ["category", "type", "gender_group", "season"]
         },
-        renk_paleti: {
+        color_palette: { 
           type: SchemaType.OBJECT,
           properties: {
-            ana_renk: { type: SchemaType.STRING, description: "Dominant color name in Turkish" },
-            ikincil_renk: { type: SchemaType.STRING, description: "Secondary color or detail color" }
+            primary_color: { type: SchemaType.STRING, description: "Dominant color name" },
+            secondary_color: { type: SchemaType.STRING, description: "Secondary color or detail color" }
           },
-          required: ["ana_renk"]
+          required: ["primary_color"]
         },
-        tasarim_detaylari: {
+        design_details: { 
           type: SchemaType.OBJECT,
           properties: {
-            yaka_stili: { type: SchemaType.STRING, description: "Collar style" },
-            kol_boyu: { type: SchemaType.STRING, description: "Sleeve length/style" },
-            mansetler: { type: SchemaType.STRING, description: "Cuff details" },
-            etek_ucu: { type: SchemaType.STRING, description: "Hemline details" },
-            kapama_sistemi: { type: SchemaType.STRING, description: "Closure (buttons, zipper, etc.)" },
-            kesim: { type: SchemaType.STRING, description: "Fit (Oversize, Slim, Regular)" }
+            collar_style: { type: SchemaType.STRING, description: "Collar style (e.g., V-neck, Crew neck)" },
+            sleeve_length: { type: SchemaType.STRING, description: "Sleeve length/style (e.g., Long sleeve, Short sleeve)" },
+            cuffs: { type: SchemaType.STRING, description: "Cuff details" },
+            hemline: { type: SchemaType.STRING, description: "Hemline details" },
+            closure_type: { type: SchemaType.STRING, description: "Closure (buttons, zipper, etc.)" },
+            fit: { type: SchemaType.STRING, description: "Fit (Oversize, Slim, Regular)" }
           }
         },
-        malzeme_tahmini: {
+        material_estimation: { 
           type: SchemaType.OBJECT,
           properties: {
-            kumas_tipi: { type: SchemaType.STRING, description: "Fabric type guess" },
-            doku: { type: SchemaType.STRING, description: "Texture description" }
+            fabric_type: { type: SchemaType.STRING, description: "Fabric type guess (e.g., Cotton, Denim, Silk)" },
+            texture: { type: SchemaType.STRING, description: "Texture description (e.g., Smooth, Ribbed)" }
           }
         },
-        stil_kullanimi: {
+        style_usage: { 
           type: SchemaType.OBJECT,
           properties: {
-            // BURASI ÖNEMLİ: Array (Liste) yapısı
-            tarz: {
+            style: {
               type: SchemaType.ARRAY,
               items: { type: SchemaType.STRING },
-              description: "List of styles (e.g. ['Klasik', 'Spor'])"
+              description: "List of styles (e.g. ['Classic', 'Casual', 'Streetwear'])"
             },
-            kullanim_alani: { type: SchemaType.STRING, description: "Where to wear" }
+            occasion: { type: SchemaType.STRING, description: "Where to wear (e.g., Office, Daily, Party)" }
           }
         }
       },
-      required: ["genel_bilgi", "renk_paleti", "tasarim_detaylari", "malzeme_tahmini", "stil_kullanimi"]
+      required: ["general_info", "color_palette", "design_details", "material_estimation", "style_usage"]
     }
   },
-  required: ["id", "kiyafet_analizi"],
+  required: ["id", "clothing_analysis"],
 
 };
 
@@ -88,7 +85,7 @@ export const analyzeImageWithAI = async (imageUri) => {
       model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: complexClothingSchema, // Yeni şemayı buraya bağladık
+        responseSchema: complexClothingSchema,
       }
     });
 
@@ -97,13 +94,13 @@ export const analyzeImageWithAI = async (imageUri) => {
     });
 
     // Prompt'u Türkçe analiz yapması için yönlendiriyoruz
-    const prompt = `Bu kıyafeti bir moda uzmanı gibi analiz et. 
-                    Çıktı tamamen Türkçe olmalı. 
-                    Verilen JSON şemasına sadık kal.
-                    'genel_bilgi.mevsim' alanını mutlaka doldur. "Spor" bir mevsim değildir.
-                    Renkleri ve kumaş detaylarını spesifik olarak tanımla
-                    eğer giyim ürünü (ayakkabı, üst giyim, alt giyim, her türlü kıyafet, mont ve aksesuarlar yani bileklik, çantalar, takılar şal, saat vs.) değilse  success alanı false yap.
-                    (örn: 'Mavi' yerine 'Gece Mavisi').`;
+    const prompt = `Analyze this outfit like a fashion expert. 
+                    The output must be strictly in English. 
+                    Strictly adhere to the provided JSON schema.
+                    You must fill in the 'general_info.season' field correctly; 'Sports' is not a season.
+                    Define colors and fabric details specifically (e.g., instead of 'Blue', use 'Midnight Blue').
+                    If the image is not a clothing item (shoes, tops, bottoms, any garment, coats, or accessories like bracelets,
+                    bags, jewelry, scarves, watches, etc.), set the 'success' field to false.`;
 
     const imagePart = {
       inlineData: {

@@ -11,6 +11,7 @@ const generateAndSaveOutfit = async (req, res, next) => {
   console.log("generateAndSaveOutfit called");
   try {
     const userId = req.user.id;
+    const { weather } = req.body; // Hava durumu bilgisini request body'den al
 
     if (!userId) {
       throw new CustomError(401, "User not authenticated.");
@@ -27,40 +28,40 @@ const generateAndSaveOutfit = async (req, res, next) => {
         .populate('items')
     ]);
 
-if (!userClothingItems || userClothingItems.length < 3) {
-  throw new CustomError(400, "Not enough clothing items.");
-}
+    if (!userClothingItems || userClothingItems.length < 3) {
+      throw new CustomError(400, "Not enough clothing items.");
+    }
 
-const outfitItemIds = await generateOutfitWithGemini(userClothingItems, excludedOutfits);
+    const outfitItemIds = await generateOutfitWithGemini(userClothingItems, excludedOutfits, weather);
 
-if (!outfitItemIds || outfitItemIds.length === 0) {
-  throw new CustomError(500, "Could not generate a new unique outfit.");
-}
+    if (!outfitItemIds || outfitItemIds.length === 0) {
+      throw new CustomError(500, "Could not generate a new unique outfit.");
+    }
 
-const newOutfit = new Outfit({
-  userId: userId,
-  name: `New Outfit - ${new Date().toLocaleDateString()}`,
-  items: outfitItemIds,
-  status: 'suggested',
-});
+    const newOutfit = new Outfit({
+      userId: userId,
+      name: `New Outfit - ${new Date().toLocaleDateString()}`,
+      items: outfitItemIds,
+      status: 'suggested',
+    });
 
-await newOutfit.save();
+    await newOutfit.save();
 
-const finalOutfit = await Outfit.findById(newOutfit._id).populate('items');
+    const finalOutfit = await Outfit.findById(newOutfit._id).populate('items');
 
-res.status(201).json({
-  success: true,
-  data: finalOutfit,
-  description: "Outfit generated and saved successfully."
-});
+    res.status(201).json({
+      success: true,
+      data: finalOutfit,
+      description: "Outfit generated and saved successfully."
+    });
 
   } catch (error) {
-  console.error("Error during outfit generation:", error.message);
-  if (error instanceof CustomError) {
-    return res.status(error.code || 400).json(Response.errorResponse(error.code || 400, error.message));
+    console.error("Error during outfit generation:", error.message);
+    if (error instanceof CustomError) {
+      return res.status(error.code || 400).json(Response.errorResponse(error.code || 400, error.message));
+    }
+    next(error);
   }
-  next(error);
-}
 };
 
 const updateOutfitStatus = async (req, res, next) => {

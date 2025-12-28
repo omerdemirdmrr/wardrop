@@ -79,10 +79,17 @@ const HomeScreen = ({ navigation }) => {
     };
 
     // --- KOMBİN GETİRME FONKSİYONU ---
-    const fetchOutfit = useCallback(async (params = {}) => {
-        console.log("fetchOutfit called with params:", params);
+    const fetchOutfit = useCallback(async (additionalParams = {}, currentWeatherData = weather) => {
+        console.log("fetchOutfit called with params:", additionalParams, "and weather:", currentWeatherData);
         try {
             setLoading(true);
+
+            const weatherParam = currentWeatherData 
+                ? { weather: `${currentWeatherData.condition}, ${currentWeatherData.temperature}°C` }
+                : {};
+
+            const params = { ...weatherParam, ...additionalParams };
+
             const response = await generateOutfit(params);
             console.log("generateOutfit response:", response);
 
@@ -96,7 +103,7 @@ const HomeScreen = ({ navigation }) => {
             } else {
                 showError({
                     title: 'Outfit Generation Failed',
-                    message: ERROR_MESSAGES.OUTFIT.NOT_ENOUGH_ITEMS,
+                    message: response.data?.message || ERROR_MESSAGES.OUTFIT.NOT_ENOUGH_ITEMS,
                     category: 'VALIDATION'
                 });
                 console.warn("Outfit generation failed:", response.data?.message);
@@ -107,11 +114,11 @@ const HomeScreen = ({ navigation }) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [showError, weather]); // weather'ı burada tutmak, refresh gibi eylemlerde güncel kalmasını sağlar
 
     // --- HAVA DURUMU GETİRME FONKSİYONU ---
     const fetchWeather = useCallback(async () => {
-        if (!user) return;
+        if (!user) return null;
         try {
             const perm = await Location.getForegroundPermissionsAsync();
             let coords;
@@ -124,9 +131,12 @@ const HomeScreen = ({ navigation }) => {
             const weatherResponse = await getWeatherByCoords(coords.latitude, coords.longitude);
             if (weatherResponse.success) {
                 setWeather(weatherResponse.data);
+                return weatherResponse.data; // Veriyi geri döndür
             }
+            return null;
         } catch (error) {
             console.error("Weather error:", error);
+            return null;
         }
     }, [user]);
 
@@ -139,10 +149,13 @@ const HomeScreen = ({ navigation }) => {
 
             if (!response.success) {
                 showError(errorHandler.formatErrorForUser(response.error));
+                setProcessingAction(false);
                 return;
             }
+            // Yeni kombin isteği
+            const newWeather = await fetchWeather();
+            fetchOutfit({}, newWeather);
 
-            fetchOutfit();
         } catch (error) {
             const standardError = errorHandler.handleApiError(error);
             showError(errorHandler.formatErrorForUser(standardError));
@@ -161,10 +174,13 @@ const HomeScreen = ({ navigation }) => {
 
             if (!response.success) {
                 showError(errorHandler.formatErrorForUser(response.error));
+                 setProcessingAction(false);
                 return;
             }
-
-            fetchOutfit({ exclude: dislikedId, feedback: 'disliked' });
+            
+            const newWeather = await fetchWeather();
+            fetchOutfit({ exclude: dislikedId, feedback: 'disliked' }, newWeather);
+           
         } catch (error) {
             const standardError = errorHandler.handleApiError(error);
             showError(errorHandler.formatErrorForUser(standardError));
@@ -175,10 +191,15 @@ const HomeScreen = ({ navigation }) => {
 
     // Uygulama açılışında veri çek
     useEffect(() => {
-        if (user) {
-            fetchOutfit();
-            fetchWeather();
-        }
+        const loadData = async () => {
+            if (user) {
+                setLoading(true);
+                const newWeather = await fetchWeather();
+                fetchOutfit({}, newWeather);
+            }
+        };
+
+        loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?._id]);
 

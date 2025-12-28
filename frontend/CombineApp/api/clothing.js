@@ -139,21 +139,21 @@ export const saveClothingItem = async (clothingData) => {
   // 2. Diğer verileri AI sonucundan ve formdan alıp ekle
   formData.append('name', name);
   
-  const anaRenk = aiResult?.kiyafet_analizi?.renk_paleti?.ana_renk;
-  formData.append('color', anaRenk || color1?.label || color1);
+  const primaryColor = aiResult?.clothing_analysis?.color_palette?.primary_color;
+  formData.append('color', primaryColor || color1?.label || color1);
 
-  if (aiResult && aiResult.kiyafet_analizi) {
-    const analysis = aiResult.kiyafet_analizi;
-    if (analysis.genel_bilgi) {
-      formData.append('category', analysis.genel_bilgi.kategori || 'General');
-      formData.append('subCategory', analysis.genel_bilgi.tur || 'General');
-      formData.append('season', analysis.genel_bilgi.mevsim || 'All-Season');
+  if (aiResult && aiResult.clothing_analysis) {
+    const analysis = aiResult.clothing_analysis;
+    if (analysis.general_info) {
+      formData.append('category', analysis.general_info.category || 'General');
+      formData.append('subCategory', analysis.general_info.type || 'General');
+      formData.append('season', analysis.general_info.season || 'All-Season');
     }
-    if (analysis.tasarim_detaylari) {
-      formData.append('size', analysis.tasarim_detaylari.kesim || 'One Size');
+    if (analysis.design_details) {
+      formData.append('size', analysis.design_details.fit || 'One Size');
     }
-    if (analysis.malzeme_tahmini) {
-        formData.append('material', analysis.malzeme_tahmini.kumas_tipi || 'Unknown');
+    if (analysis.material_estimation) {
+        formData.append('material', analysis.material_estimation.fabric_type || 'Unknown');
     }
   } else {
     // Eski veya basitleştirilmiş AI verisi için fallback

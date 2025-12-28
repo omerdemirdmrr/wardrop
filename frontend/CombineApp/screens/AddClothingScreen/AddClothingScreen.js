@@ -51,7 +51,7 @@ const AddClothingScreen = ({ navigation }) => {
         return;
       }
 
-      if (!response.data?.kiyafet_analizi?.success) {
+      if (!response.data?.clothing_analysis?.success) {
         showError({
           title: 'Not Clothing',
           message: 'Please upload an image of clothing or accessories',
@@ -60,26 +60,26 @@ const AddClothingScreen = ({ navigation }) => {
         return;
       }
 
-      const analysis = response.data.kiyafet_analizi;
+      const analysis = response.data.clothing_analysis;
       setAiResult(response.data);
 
-      const anaRenk = analysis.renk_paleti?.ana_renk;
-      const ikincilRenk = analysis.renk_paleti?.ikincil_renk;
-      const kategori = analysis.genel_bilgi?.kategori;
-      const tur = analysis.genel_bilgi?.tur;
-      const mevsim = analysis.genel_bilgi?.mevsim || 'Tüm Mevsimler';
+      const primaryColor = analysis.color_palette?.primary_color;
+      const secondaryColor = analysis.color_palette?.secondary_color;
+      const category = analysis.general_info?.category;
+      const type = analysis.general_info?.type;
+      const season = analysis.general_info?.season || 'All Seasons';
 
-      const foundColor1 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === anaRenk?.toLowerCase());
-      const foundColor2 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === ikincilRenk?.toLowerCase());
+      const foundColor1 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === primaryColor?.toLowerCase());
+      const foundColor2 = COLORS_OPTIONS.find(c => c.label.toLowerCase() === secondaryColor?.toLowerCase());
 
-      const finalColor1 = foundColor1 || (anaRenk ? { label: anaRenk, value: anaRenk } : null);
-      const finalColor2 = foundColor2 || (ikincilRenk ? { label: ikincilRenk, value: ikincilRenk } : null);
+      const finalColor1 = foundColor1 || (primaryColor ? { label: primaryColor, value: primaryColor } : null);
+      const finalColor2 = foundColor2 || (secondaryColor ? { label: secondaryColor, value: secondaryColor } : null);
 
       setColor1(finalColor1);
       setColor2(finalColor2);
 
-      const namePrefix = anaRenk ? `${anaRenk} ` : '';
-      setName(`${namePrefix}${tur}`);
+      const namePrefix = primaryColor ? `${primaryColor} ` : '';
+      setName(`${namePrefix}${type}`);
 
     } catch (error) {
       const standardError = errorHandler.handleApiError(error);
@@ -195,7 +195,7 @@ const AddClothingScreen = ({ navigation }) => {
             ) : (
               <View style={styles.imagePlaceholder}>
                 <Ionicons name="shirt-outline" size={60} color={COLORS.gray} />
-                <Text style={styles.placeholderText}>Kıyafetini Yükle</Text>
+                <Text style={styles.placeholderText}>Load Your Clothing</Text>
               </View>
             )}
 
@@ -203,7 +203,7 @@ const AddClothingScreen = ({ navigation }) => {
             {analyzing && (
               <View style={styles.analyzingOverlay}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.analyzingText}>Yapay Zeka Analiz Ediyor...</Text>
+                <Text style={styles.analyzingText}>AI is Analyzing...</Text>
               </View>
             )}
           </View>
@@ -212,27 +212,27 @@ const AddClothingScreen = ({ navigation }) => {
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.imageButton} onPress={pickImageCamera} disabled={loading || analyzing}>
               <Ionicons name="camera" size={20} color={COLORS.primaryText} />
-              <Text style={styles.imageButtonText}>Kamera</Text>
+              <Text style={styles.imageButtonText}>Camera</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.imageButton} onPress={pickImageGallery} disabled={loading || analyzing}>
               <Ionicons name="images" size={20} color={COLORS.primaryText} />
-              <Text style={styles.imageButtonText}>Galeri</Text>
+              <Text style={styles.imageButtonText}>Gallery</Text>
             </TouchableOpacity>
           </View>
 
           {/* 3. SONUÇ VE DÜZENLEME ALANI */}
           {aiResult && !analyzing && (
             <View style={styles.resultContainer}>
-              <Text style={styles.sectionTitle}>Analiz Tamamlandı</Text>
+              <Text style={styles.sectionTitle}>Analysis Completed</Text>
 
               {/* İSİM GİRİŞİ */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Kıyafet Adı</Text>
+                <Text style={styles.label}>Clothing Name</Text>
                 <TextInput
                   style={styles.textInput}
                   value={name}
                   onChangeText={setName}
-                  placeholder="Örn: Mavi Gömleğim"
+                  placeholder="Example: My Blue Shirt"
                   placeholderTextColor={COLORS.gray}
                 />
               </View>
@@ -240,26 +240,26 @@ const AddClothingScreen = ({ navigation }) => {
               {/* AI BİLGİ KARTI */}
               <View style={styles.infoCard}>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Kategori:</Text>
-                  <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.genel_bilgi?.kategori}</Text>
+                  <Text style={styles.infoLabel}>category:</Text>
+                  <Text style={styles.infoValue}>{aiResult.clothing_analysis?.general_info?.category}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Tür:</Text>
-                  <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.genel_bilgi?.tur}</Text>
+                  <Text style={styles.infoLabel}>Type:</Text>
+                  <Text style={styles.infoValue}>{aiResult.clothing_analysis?.general_info?.type}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Mevsim:</Text>
-                  <Text style={styles.infoValue}>{aiResult.kiyafet_analizi?.genel_bilgi?.mevsim || 'Tüm Mevsimler'}</Text>
+                  <Text style={styles.infoLabel}>season:</Text>
+                  <Text style={styles.infoValue}>{aiResult.clothing_analysis?.general_info?.season || 'Tüm seasonler'}</Text>
                 </View>
               </View>
 
               <View style={styles.infoCard}>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Baskın Renk:</Text>
+                  <Text style={styles.infoLabel}>primary Color:</Text>
                   <Text style={styles.infoValue}>{color1 ? color1.label : 'Belirlenemedi'}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>İkincil Renk:</Text>
+                  <Text style={styles.infoLabel}>secondary Color:</Text>
                   <Text style={styles.infoValue}>{color2 ? color2.label : '-'}</Text>
                 </View>
               </View>
@@ -269,7 +269,7 @@ const AddClothingScreen = ({ navigation }) => {
                 {loading ? (
                   <ActivityIndicator color={COLORS.primaryText} />
                 ) : (
-                  <Text style={styles.saveButtonText}>Kaydet</Text>
+                  <Text style={styles.saveButtonText}>Save</Text>
                 )}
               </TouchableOpacity>
             </View>

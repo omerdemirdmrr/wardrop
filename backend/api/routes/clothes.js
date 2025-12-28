@@ -40,7 +40,7 @@ router.post("/add", verifyToken, upload.single("image"), async (req, res) => {
             return res.status(_enum.HTTP_STATUS.BAD_REQUEST).json(
                 response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
                     message: "Missing required fields",
-                    description: "Name, Category, and Color are required."
+                    description: "Name, Category, SubCategory and Color are required."
                 })
             );
         }
@@ -81,6 +81,7 @@ router.post("/add", verifyToken, upload.single("image"), async (req, res) => {
             userId: req.user.id, // Token'dan gelen user ID'yi kullanıyoruz
             name,
             category,
+            subCategory,
             color,
             imageUrl,
             imagePublicId,
@@ -88,8 +89,6 @@ router.post("/add", verifyToken, upload.single("image"), async (req, res) => {
         };
 
         // İsteğe bağlı alanları varsa ekle
-        if (subCategory) newClothData.subCategory = subCategory;
-
         if (size) newClothData.size = size;
         if (material) newClothData.material = material;
 

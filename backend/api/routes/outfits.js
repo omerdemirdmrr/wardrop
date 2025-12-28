@@ -39,7 +39,7 @@ router.post("/add", verifyToken, async (req, res) => {
         if (!name || !items || items.length === 0) {
             return res.status(_enum.HTTP_STATUS.BAD_REQUEST).json(
                 response.errorResponse(_enum.HTTP_STATUS.BAD_REQUEST, {
-                    message: "Eksik bilgi",
+                    message: "Missing Info",
                     description: "Outfit name and at least one clothing item must be selected."
                 })
             );
@@ -85,7 +85,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
         }
 
         return res.status(_enum.HTTP_STATUS.OK).json(
-            response.successResponse(_enum.HTTP_STATUS.OK, "Kombin silindi")
+            response.successResponse(_enum.HTTP_STATUS.OK, "Combine Deleted")
         );
     } catch (err) {
         return res.status(_enum.HTTP_STATUS.INTERNAL_SERVER_ERROR).json(

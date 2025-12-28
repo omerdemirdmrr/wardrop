@@ -373,7 +373,7 @@ const OutfitScreen = ({ navigation, route }) => {
         {activeTab === 'disliked' && dislikedOutfits.length > 0 && (
             <View style={styles.floatingActionContainer}>
                  <TouchableOpacity style={styles.clearAllButton} onPress={handleClearAllDisliked}>
-                    <Text style={styles.clearAllText}>Hepsini Temizle</Text>
+                    <Text style={styles.clearAllText}>Clear All</Text>
                     <Ionicons name="trash-bin-outline" size={20} color={COLORS.white} style={{ marginLeft: 5 }} />
                  </TouchableOpacity>
             </View>

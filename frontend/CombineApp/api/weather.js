@@ -33,7 +33,7 @@ export const getWeatherByCoords = async (latitude, longitude) => {
         lon: longitude,
         appid: API_KEY,
         units: 'metric', // For Celsius
-        lang: 'tr'
+        lang: 'en'
       },
     });
 

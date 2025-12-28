@@ -1,15 +1,10 @@
-
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 // Gerekli modelleri import edelim. Bu yolların projenizin yapısına göre doğru olduğundan emin olun.
 const ClothingItem = require('../db/models/ClothingItems'); 
 const Outfit = require('../db/models/Outfits');
 const CustomError  = require('../lib/CustomError');
 
-// ÖNEMLİ: @google/generative-ai paketini backend/api dizininde kurmanız gerekir:
-// npm install @google/generative-ai
 
-// Google AI Studio'dan veya Google Cloud projenizden aldığınız API anahtarınız.
-// Bu anahtarı .env dosyasında saklamak en iyi pratiktir.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 if (!GEMINI_API_KEY) {
@@ -25,8 +20,8 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
  * @param {Array<Object>} clothingItems - Kullanıcının gardırobundaki kıyafetlerin listesi.
  * @returns {Array<String>} - Kombini oluşturan kıyafetlerin ID'lerini içeren bir dizi.
  */
-async function generateOutfitWithGemini(clothingItems, excludedOutfits = []) {
-  console.log("Kombin oluşturma işlemi Gemini ile başlıyor..."); // Durum: Başlangıç
+async function generateOutfitWithGemini(clothingItems, excludedOutfits = [], weather = null) {
+  console.log("Combine is starting..."); // Durum: Başlangıç
 
   // Kıyafet verilerini Gemini'nin anlayacağı daha basit bir formata dönüştürelim.
   const simplifiedClothes = clothingItems.map(item => ({
@@ -44,54 +39,57 @@ async function generateOutfitWithGemini(clothingItems, excludedOutfits = []) {
   }));
 
   const prompt = `
-    Merhaba, ben bir moda asistanıyım. Aşağıda JSON formatında bir kıyafet listesi bulunuyor.
-    Bu kıyafetleri kullanarak harika bir kombin oluşturmanı istiyorum.
-    Lütfen bu kombini oluştururken mevsimsel uyuma, renk uyumuna ve stil bütünlüğüne dikkat et.
+    Hello, act as a fashion assistant. Below is a list of clothing items in JSON format.
+    I want you to create a stylish outfit combination using these items.
+    Please pay attention to seasonal appropriateness, color harmony, and stylistic cohesion when creating this outfit.
+    
+    ${weather ? `IMPORTANT: The current weather is "${weather}". Please create an outfit combination suitable for this weather.` : ''}
 
-    Kıyafetler:
+    Clothing Items:
     ${JSON.stringify(simplifiedClothes, null, 2)}
 
-    ÖNEMLİ: Aşağıdaki kombinleri daha önce önerdim veya kullanıcı bunları beğenmedi.
-    Lütfen bunlara benzer bir kombin oluşturmaktan KAÇIN.
-    Kaçınılması Gereken Kombinler:
+    IMPORTANT: The following outfits have already been suggested or were rejected by the user.
+    Please AVOID creating a combination similar to these.
+    Outfits to Avoid:
     ${JSON.stringify(simplifiedExcludedOutfits, null, 2)}
 
-    Yapman gereken:
-    1. "Kıyafetler" listesinden, "Kaçınılması Gereken Kombinler" listesindekilere benzemeyen, birbiriyle uyumlu kıyafetleri seçerek yeni bir kombin oluştur.
-    2. Kombin oluştururken en az bir üst giyim, bir alt giyim ve bir ayakkabı içermesine dikkat et.
-    3. Cevap olarak, sadece seçtiğin kıyafetlerin 'id'lerini içeren bir JSON nesnesi döndür.
-    Cevabın şu formatta olmalı: { "outfit_ids": ["id1", "id2", "id3", ...] }
-    Başka hiçbir açıklama veya metin ekleme. Sadece JSON nesnesini döndür.
+    Instructions:
+    1. Select compatible items from the "Clothing Items" list to create a fresh outfit, ensuring it is distinct from the "Outfits to Avoid" list.
+    2. Ensure the outfit includes at least one top, one bottom, and one pair of shoes.
+    3. As a response, return ONLY a JSON object containing the 'id's of the selected items.
+    
+    The response format must be strictly: { "outfit_ids": ["id1", "id2", "id3", ...] }
+    
+    Do not add any explanations, markdown formatting, or extra text. Return ONLY the JSON object.
   `;
   console.log("Gemini prompt:", prompt);
 
   try {
-    console.log("Gemini API çağrılıyor..."); // Durum: API çağrısı
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const rawResponse = response.text();
     console.log("Gemini raw response:", rawResponse);
-    console.log("Gemini'den yanıt başarıyla alındı."); // Durum: API başarısı
 
     let parsedJson;
     try {
         const jsonString = rawResponse.replace(/```json/g, '').replace(/```/g, '').trim();
         parsedJson = JSON.parse(jsonString);
         console.log("Parsed Gemini response:", parsedJson);
-        console.log("Gemini yanıtı başarıyla ayrıştırıldı."); // Durum: JSON ayrıştırma başarısı
+        console.log("Gemini response parsed."); // Durum: JSON ayrıştırma başarısı
     } catch (parseError) {
-        console.error('Gemini yanıtından JSON ayrıştırılırken hata oluştu:', parseError);
-        console.error('Ham Gemini yanıtı:', rawResponse);
-        throw new CustomError( 500 , "Gemini'den kombin verileri ayrıştırılamadı. Yanıt formatı geçersiz.");
+        console.error('Gemini response parsed error.', parseError);
+        console.error('Gemini Response:', rawResponse);
+        throw new CustomError( 500 , "The combination data could not be parsed from Gemini. The response format is invalid.");
     }
 
     if (!parsedJson.outfit_ids || !Array.isArray(parsedJson.outfit_ids)) {
-      console.error('Gemini yanıtında geçersiz JSON yapısı:', parsedJson);
-      throw new CustomError( 500 ,'Gemini yanıtında geçersiz veri yapısı. "outfit_ids" dizisi eksik veya bir dizi değil.');
+      console.error('Geminis response contains an invalid JSON structure.:', parsedJson);
+      throw new CustomError( 500 ,'Geminis response indicates an invalid data structure. The "outfit_ids" array is either missing or not an array.');
     }
 
-    console.log("Gemini ile kombin oluşturma başarıyla tamamlandı."); // Durum: Bitiş
+    console.log("Creating the outfit with Gemini has been successfully completed."); // Durum: Bitiş
+    console.log("weather:",weather);
     return parsedJson.outfit_ids;
 
   } catch (error) {
@@ -99,8 +97,8 @@ async function generateOutfitWithGemini(clothingItems, excludedOutfits = []) {
         // Özel hataları denetleyici tarafından işlenmek üzere yeniden fırlat
         throw error;
     }
-    console.error('Gemini API çağrılırken beklenmedik bir hata oluştu:', error);
-    throw new CustomError( 500 , "Beklenmedik bir API hatası nedeniyle Gemini'den kombin oluşturulamadı.");
+    console.error('An unexpected error occurred while calling the Gemini API:', error);
+    throw new CustomError( 500 , "An unexpected API error prevented the creation of combos from Gemini.");
   }
 }
 

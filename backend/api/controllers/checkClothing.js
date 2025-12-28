@@ -1,4 +1,4 @@
-const ClothingItems = require("../db/models/ClothingItems"); // model yolunu kontrol et
+const ClothingItems = require("../db/models/ClothingItems"); 
 
 const checkClothingCount = async (req, res, next) => {
   try {
@@ -16,14 +16,14 @@ const checkClothingCount = async (req, res, next) => {
     if (count < 3) {
       return res.status(400).json({
         success: false,
-        message: "En az 3 kıyafet eklemeden kombin oluşturulamaz",
+        message: "You can't create an outfit without adding at least 3 clothing items.",
         currentCount: count,
       });
     }
 
-    const hasUpper = await ClothingItems.exists({ userId, category: "Üst Giyim" });
-    const hasLower = await ClothingItems.exists({ userId, category: "Alt Giyim" });
-    const hasFootwear = await ClothingItems.exists({ userId, category: "Ayakkabı" });
+    const hasUpper = await ClothingItems.exists({ userId, category: "Top" });
+    const hasLower = await ClothingItems.exists({ userId, category: "Bottom" });
+    const hasFootwear = await ClothingItems.exists({ userId, category: "Shoe" });
 
     if (!hasUpper || !hasLower || !hasFootwear) {
       return res.status(400).json({
@@ -32,13 +32,13 @@ const checkClothingCount = async (req, res, next) => {
       });
     }
 
-    // ✅ Şart sağlandı → devam
+    
     next();
   } catch (error) {
     console.error("🔥 checkClothingCount error:", error);
     res.status(500).json({
       success: false,
-      message: "Kıyafet sayısı kontrol edilirken hata oluştu",
+      message: "An error occurred while checking the number of garments",
     });
   }
 };
