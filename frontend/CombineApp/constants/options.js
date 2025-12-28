@@ -4,6 +4,8 @@ export const CATEGORIES = [
   { label: 'Outerwear', value: 'outerwear' },
   { label: 'Shoes', value: 'shoes' },
   { label: 'Accessory', value: 'accessory' },
+  { label: 'Suit', value: 'suit' },
+  { label: 'Dress', value: 'dress' },
 ];
 
 export const COLORS_OPTIONS = [
@@ -25,5 +27,5 @@ export const SEASONS = [
   { label: 'Summer', value: 'summer' },
   { label: 'Autumn', value: 'autumn' },
   { label: 'Winter', value: 'winter' },
-  { label: 'All-Season', value: 'all' },
+  { label: 'All Seasons', value: 'all' },
 ];

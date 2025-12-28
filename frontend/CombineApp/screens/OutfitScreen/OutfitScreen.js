@@ -19,7 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { COLORS } from "../../colors";
 
-import { getUserOutfits, deleteOutfit, clearDislikedOutfits } from "../../api/outfits";
+import { getUserOutfits, deleteOutfit } from "../../api/outfits";
 import { useAuth } from "../../context/AuthContext";
 import { useError } from "../../context/ErrorContext";
 import { errorHandler } from "../../utils";
@@ -30,7 +30,6 @@ const OutfitScreen = ({ navigation, route }) => {
   const [activeTab, setActiveTab] = useState("favorites");
   const [customOutfits, setCustomOutfits] = useState([]);
   const [favoriteOutfits, setFavoriteOutfits] = useState([]);
-  const [dislikedOutfits, setDislikedOutfits] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
 
@@ -61,11 +60,9 @@ const OutfitScreen = ({ navigation, route }) => {
             const favs = allOutfits.filter(o => o.status === 'worn' || o.status === 'favorite').map(mapOutfitData);
             // Include outfits with no status (user-created), 'created', or 'custom'
             const customs = allOutfits.filter(o => !o.status || o.status === 'created' || o.status === 'custom').map(mapOutfitData);
-            const disliked = allOutfits.filter(o => o.status === 'disliked').map(mapOutfitData);
             
             setFavoriteOutfits(favs);
             setCustomOutfits(customs); 
-            setDislikedOutfits(disliked); 
         }
     } catch (error) {
         const standardError = errorHandler.handleApiError(error);
@@ -96,12 +93,7 @@ const OutfitScreen = ({ navigation, route }) => {
     }, [fetchOutfits, route.params?.newOutfit]),
   );
 
-  const currentData =
-    activeTab === "favorites" 
-        ? favoriteOutfits 
-        : activeTab === "custom" 
-        ? customOutfits 
-        : dislikedOutfits;
+  const currentData = activeTab === "favorites" ? favoriteOutfits : customOutfits;
 
   const handleCreateOutfit = () => {
     navigation.navigate("CreateOutfit");
@@ -158,7 +150,6 @@ const OutfitScreen = ({ navigation, route }) => {
                           const filterFunc = (o) => o.id !== item.id;
                           setFavoriteOutfits(prev => prev.filter(filterFunc));
                           setCustomOutfits(prev => prev.filter(filterFunc));
-                          setDislikedOutfits(prev => prev.filter(filterFunc));
                       } catch (error) {
                           const standardError = errorHandler.handleApiError(error);
                           showError(errorHandler.formatErrorForUser(standardError));
@@ -169,34 +160,7 @@ const OutfitScreen = ({ navigation, route }) => {
       );
   };
 
-  const handleClearAllDisliked = () => {
-    Alert.alert(
-        "Clear All",
-        "Are you sure want to delete all disliked outfit records and reset?",
-        [
-            { text: "Cancel", style: "cancel" },
-            { 
-                text: "Reset", 
-                style: "destructive", 
-                onPress: async () => {
-                    try {
-                        const res = await clearDislikedOutfits();
-                        
-                        if (!res.success) {
-                            showError(errorHandler.formatErrorForUser(res.error));
-                            return;
-                        }
-                        
-                        setDislikedOutfits([]);
-                    } catch (error) {
-                        const standardError = errorHandler.handleApiError(error);
-                        showError(errorHandler.formatErrorForUser(standardError));
-                    }
-                }
-            }
-        ]
-    );
-  };
+
 
   const renderOutfitItem = ({ item }) => {
     const isExpanded = expandedId === item.id;
@@ -335,22 +299,7 @@ const OutfitScreen = ({ navigation, route }) => {
               My Creations
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              activeTab === "disliked" && styles.activeTabButton,
-            ]}
-            onPress={() => setActiveTab("disliked")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "disliked" && styles.activeTabText,
-              ]}
-            >
-              Disliked
-            </Text>
-          </TouchableOpacity>
+
         </View>
 
         {/* List */}
@@ -370,14 +319,7 @@ const OutfitScreen = ({ navigation, route }) => {
           }
         />
 
-        {activeTab === 'disliked' && dislikedOutfits.length > 0 && (
-            <View style={styles.floatingActionContainer}>
-                 <TouchableOpacity style={styles.clearAllButton} onPress={handleClearAllDisliked}>
-                    <Text style={styles.clearAllText}>Clear All</Text>
-                    <Ionicons name="trash-bin-outline" size={20} color={COLORS.white} style={{ marginLeft: 5 }} />
-                 </TouchableOpacity>
-            </View>
-        )}
+
 
         <TouchableOpacity
           style={styles.fab}

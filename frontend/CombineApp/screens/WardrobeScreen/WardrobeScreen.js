@@ -34,7 +34,6 @@ const WardrobeScreen = ({ navigation }) => {
     const [filtersVisible, setFiltersVisible] = useState(false);  
     
     const [selectedCategory, setSelectedCategory] = useState(null);
-    const [selectedColor, setSelectedColor] = useState(null);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [isAnyFilterActive, setIsAnyFilterActive] = useState(false);
 
@@ -42,7 +41,6 @@ const WardrobeScreen = ({ navigation }) => {
     const [detailModalVisible, setDetailModalVisible] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
-    const [isColorModalVisible, setColorModalVisible] = useState(false);
     const [isSeasonModalVisible, setSeasonModalVisible] = useState(false);
 
     // --- YENİ FONKSİYON: Listeyi Çift Sayıya Tamamlama ---
@@ -99,7 +97,7 @@ const WardrobeScreen = ({ navigation }) => {
     useEffect(() => {
         let result = clothes; 
 
-        const anyFilterActive = searchQuery || selectedCategory || selectedColor || selectedSeason;
+        const anyFilterActive = searchQuery || selectedCategory || selectedSeason;
         setIsAnyFilterActive(anyFilterActive);
 
         if (searchQuery) {
@@ -111,17 +109,14 @@ const WardrobeScreen = ({ navigation }) => {
             const categoryLabel = CATEGORIES.find(c => c.value === selectedCategory)?.label;
             result = result.filter(item => item.category === categoryLabel);
         }
-        if (selectedColor) {
-            const colorLabel = COLORS_OPTIONS.find(c => c.value === selectedColor)?.label;
-            result = result.filter(item => item.color === colorLabel || item.color1 === selectedColor); 
-        }
+
         if (selectedSeason) {
             const seasonLabel = SEASONS.find(s => s.value === selectedSeason)?.label;
             result = result.filter(item => item.season === seasonLabel);
         }
 
         setFilteredClothes(result);
-    }, [clothes, searchQuery, selectedCategory, selectedColor, selectedSeason]);
+    }, [clothes, searchQuery, selectedCategory, selectedSeason]);
 
     // --- HANDLERS ---
     const handleCardPress = (item) => {
@@ -136,7 +131,6 @@ const WardrobeScreen = ({ navigation }) => {
     
     const handleClearFilters = () => {
         setSelectedCategory(null);
-        setSelectedColor(null);
         setSelectedSeason(null);
         setSearchQuery('');
     };
@@ -145,10 +139,7 @@ const WardrobeScreen = ({ navigation }) => {
         setSelectedCategory(category.value);
         setCategoryModalVisible(false);
     };
-    const handleSelectColor = (color) => {
-        setSelectedColor(color.value);
-        setColorModalVisible(false);
-    };
+
     const handleSelectSeason = (season) => {
         setSelectedSeason(season.value);
         setSeasonModalVisible(false);
@@ -205,9 +196,7 @@ const WardrobeScreen = ({ navigation }) => {
                         <TouchableOpacity style={styles.filterChip} onPress={() => setCategoryModalVisible(true)}>
                             <Text style={styles.filterChipText}>{getButtonText(CATEGORIES, selectedCategory) || 'Category'}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.filterChip} onPress={() => setColorModalVisible(true)}>
-                            <Text style={styles.filterChipText}>{getButtonText(COLORS_OPTIONS, selectedColor) || 'Color'}</Text>
-                        </TouchableOpacity>
+
                         <TouchableOpacity style={styles.filterChip} onPress={() => setSeasonModalVisible(true)}>
                             <Text style={styles.filterChipText}>{getButtonText(SEASONS, selectedSeason) || 'Season'}</Text>
                         </TouchableOpacity>
@@ -269,13 +258,7 @@ const WardrobeScreen = ({ navigation }) => {
                     onSelect={handleSelectCategory}
                     modalTitle="Select a Category"
                 />
-                <SelectionModal
-                    visible={isColorModalVisible}
-                    options={COLORS_OPTIONS}
-                    onClose={() => setColorModalVisible(false)}
-                    onSelect={handleSelectColor}
-                    modalTitle="Select a Color"
-                />
+
                 <SelectionModal
                     visible={isSeasonModalVisible}
                     options={SEASONS}

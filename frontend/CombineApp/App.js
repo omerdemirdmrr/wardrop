@@ -131,18 +131,6 @@ function MainTabs() {
       />
 
       <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          title: "Profile",
-          headerShown: true,
-          ...darkScreenOptions,
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="person-outline" size={28} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
         name="Outfits"
         component={OutfitScreen}
         options={{
@@ -151,6 +139,18 @@ function MainTabs() {
           ...darkScreenOptions,
           tabBarIcon: ({ color }) => (
             <Ionicons name="shirt-outline" size={28} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: "Profile",
+          headerShown: true,
+          ...darkScreenOptions,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person-outline" size={28} color={color} />
           ),
         }}
       />
