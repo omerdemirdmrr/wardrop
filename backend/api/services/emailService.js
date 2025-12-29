@@ -1,6 +1,14 @@
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
+// Log environment variables (masked)
+console.log('=== Email Configuration ===');
+console.log('EMAIL_USER:', process.env.EMAIL_USER ? `${process.env.EMAIL_USER.substring(0, 3)}***` : 'NOT SET');
+console.log('EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? '***SET***' : 'NOT SET');
+console.log('EMAIL_FROM:', process.env.EMAIL_FROM || 'NOT SET');
+console.log('BACKEND_URL:', process.env.BACKEND_URL || 'NOT SET');
+console.log('===========================');
+
 // Email transporter configuration
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -30,9 +38,15 @@ function generateVerificationToken() {
  * @param {string} username - User's username
  */
 async function sendVerificationEmail(email, token, username) {
+  console.log('\n[EMAIL SERVICE] Sending verification email...');
+  console.log('[EMAIL SERVICE] To:', email);
+  console.log('[EMAIL SERVICE] Username:', username);
+  console.log('[EMAIL SERVICE] Token:', token.substring(0, 10) + '...');
+  
   const verificationUrl = `${
     process.env.BACKEND_URL || "http://localhost:4000"
   }/api/users/verify-email/${token}`;
+  console.log('[EMAIL SERVICE] Verification URL:', verificationUrl);
 
   const mailOptions = {
     from: process.env.EMAIL_FROM || '"Wardrop" <noreply@wardrop.com>',
@@ -139,11 +153,24 @@ async function sendVerificationEmail(email, token, username) {
   };
 
   try {
+    console.log('[EMAIL SERVICE] Mail options:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+    console.log('[EMAIL SERVICE] Attempting to send email...');
+    
     const info = await transporter.sendMail(mailOptions);
-    console.log("Verification email sent:", info.messageId);
+    
+    console.log('[EMAIL SERVICE] ✓ Verification email sent successfully!');
+    console.log('[EMAIL SERVICE] Message ID:', info.messageId);
+    console.log('[EMAIL SERVICE] Response:', info.response);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Error sending verification email:", error);
+    console.error('[EMAIL SERVICE] ✗ Error sending verification email!');
+    console.error('[EMAIL SERVICE] Error code:', error.code);
+    console.error('[EMAIL SERVICE] Error message:', error.message);
+    console.error('[EMAIL SERVICE] Full error:', error);
     throw error;
   }
 }
@@ -169,7 +196,16 @@ async function sendPasswordResetEmail(email, token) {
     text: `You requested a password reset. Visit this link: ${resetUrl}\n\nThis link will expire in 1 hour.`,
   };
 
-  return await transporter.sendMail(mailOptions);
+  try {
+    console.log('[EMAIL SERVICE] Attempting to send password reset code email...');
+    const result = await transporter.sendMail(mailOptions);
+    console.log('[EMAIL SERVICE] ✓ Password reset code email sent successfully!');
+    return result;
+  } catch (error) {
+    console.error('[EMAIL SERVICE] ✗ Error sending password reset code email!');
+    console.error('[EMAIL SERVICE] Error:', error);
+    throw error;
+  }
 }
 
 /**
@@ -178,6 +214,10 @@ async function sendPasswordResetEmail(email, token) {
  * @param {string} code - 6-digit reset code
  */
 async function sendPasswordResetCode(email, code) {
+  console.log('\n[EMAIL SERVICE] Sending password reset code...');
+  console.log('[EMAIL SERVICE] To:', email);
+  console.log('[EMAIL SERVICE] Code:', code);
+  
   const mailOptions = {
     from: process.env.EMAIL_FROM || '"Wardrop" <noreply@wardrop.com>',
     to: email,
