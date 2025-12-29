@@ -1,13 +1,15 @@
-const nodemailer = require('nodemailer');
-const crypto = require('crypto');
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 
 // Email transporter configuration
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  }
+    pass: process.env.EMAIL_PASSWORD,
+  },
 });
 
 /**
@@ -15,7 +17,7 @@ const transporter = nodemailer.createTransport({
  * @returns {string} Verification token
  */
 function generateVerificationToken() {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto.randomBytes(32).toString("hex");
 }
 
 /**
@@ -25,12 +27,14 @@ function generateVerificationToken() {
  * @param {string} username - User's username
  */
 async function sendVerificationEmail(email, token, username) {
-  const verificationUrl = `${process.env.BACKEND_URL || 'http://localhost:4000'}/api/users/verify-email/${token}`;
-  
+  const verificationUrl = `${
+    process.env.BACKEND_URL || "http://localhost:4000"
+  }/api/users/verify-email/${token}`;
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || '"Wardrop" <noreply@wardrop.com>',
     to: email,
-    subject: 'Verify Your Email - Wardrop',
+    subject: "Verify Your Email - Wardrop",
     html: `
       <!DOCTYPE html>
       <html>
@@ -128,15 +132,15 @@ async function sendVerificationEmail(email, token, username) {
       This link will expire in 24 hours.
       
       If you didn't create an account with Wardrop, you can safely ignore this email.
-    `
+    `,
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('Verification email sent:', info.messageId);
+    console.log("Verification email sent:", info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error sending verification email:', error);
+    console.error("Error sending verification email:", error);
     throw error;
   }
 }
@@ -149,17 +153,17 @@ async function sendVerificationEmail(email, token, username) {
 async function sendPasswordResetEmail(email, token) {
   // Placeholder for future password reset functionality
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
-  
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || '"Wardrop" <noreply@wardrop.com>',
     to: email,
-    subject: 'Reset Your Password - Wardrop',
+    subject: "Reset Your Password - Wardrop",
     html: `
       <p>You requested a password reset. Click the link below to reset your password:</p>
       <a href="${resetUrl}">${resetUrl}</a>
       <p>This link will expire in 1 hour.</p>
     `,
-    text: `You requested a password reset. Visit this link: ${resetUrl}\n\nThis link will expire in 1 hour.`
+    text: `You requested a password reset. Visit this link: ${resetUrl}\n\nThis link will expire in 1 hour.`,
   };
 
   return await transporter.sendMail(mailOptions);
@@ -174,7 +178,7 @@ async function sendPasswordResetCode(email, code) {
   const mailOptions = {
     from: process.env.EMAIL_FROM || '"Wardrop" <noreply@wardrop.com>',
     to: email,
-    subject: 'Password Reset Code - Wardrop',
+    subject: "Password Reset Code - Wardrop",
     html: `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
         <h2>Password Reset Request</h2>
@@ -184,7 +188,7 @@ async function sendPasswordResetCode(email, code) {
         <p>If you didn't request this, please ignore this email.</p>
       </div>
     `,
-    text: `Your password reset code is: ${code}. It expires in 15 minutes.`
+    text: `Your password reset code is: ${code}. It expires in 15 minutes.`,
   };
 
   return await transporter.sendMail(mailOptions);
@@ -194,5 +198,5 @@ module.exports = {
   generateVerificationToken,
   sendVerificationEmail,
   sendPasswordResetEmail,
-  sendPasswordResetCode
+  sendPasswordResetCode,
 };
