@@ -348,6 +348,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: 20,
         backgroundColor: COLORS.white,
+        color: '#000000', // Black text on white background
         width: '100%',
     },
     checkIcon: {

@@ -212,7 +212,7 @@ const HomeScreen = ({ navigation }) => {
                     {/* ÜST BAŞLIK VE AYARLAR BUTONU */}
                     <View style={styles.header}>
                         <Text style={styles.greeting}>
-                            Good day, {user?.username ? user.username.split(" ")[0] : "User"}
+                            Hello, {user?.username ? user.username.split(" ")[0] : "User"}
                         </Text>
 
                         <TouchableOpacity onPress={handleGoToSettings}>

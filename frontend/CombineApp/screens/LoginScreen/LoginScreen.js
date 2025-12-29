@@ -107,7 +107,7 @@ const LoginScreen = ({ navigation }) => {
                 >
                     <View style={styles.innerContainer}>
                         <Text style={styles.title}>Combine</Text>
-                        <Text style={styles.subtitle}>Welcome back!</Text>
+                        <Text style={styles.subtitle}>Welcome!</Text>
 
                         {/* E-posta Giriş Alanı */}
                         <TextInput
